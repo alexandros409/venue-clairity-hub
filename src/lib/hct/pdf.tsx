@@ -35,10 +35,6 @@ type Audit = {
   actionable_steps?: string;
 };
 
-function wrapSteps(raw: string | undefined): string {
-  if (!raw) return "—";
-  return raw;
-}
 
 export async function downloadExecutiveReport(
   venueName: string,
@@ -49,6 +45,8 @@ export async function downloadExecutiveReport(
   registerUnicodeFonts(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 40;
+  const tableWidth = pageWidth - margin * 2;
+  const col6Width = tableWidth - (55 + 65 + 100 + 85 + 60 + 55);
 
   const totalLoss = audits.reduce(
     (a, b) => a + Number(b.estimated_loss_eur || 0),
@@ -161,14 +159,19 @@ export async function downloadExecutiveReport(
   doc.text("AUDIT DETAILS", margin, y);
   y += 8;
 
+  // Pre-calculate wrapped actionable steps using the correct font metrics
+  doc.setFont(FONT_FAMILY, "normal");
+  doc.setFontSize(8);
+  const stepsTextWidth = col6Width - 10; // subtract cellPadding × 2
+
   const rows = audits.map((a) => [
     formatDate(a.audit_date),
-    labelOf(SHIFTS, a.shift),
-    labelOf(PROBLEM_CATEGORIES, a.problem_category),
-    labelOf(DIAGNOSIS_TYPES, a.diagnosis_type),
-    formatEUR(Number(a.estimated_loss_eur)),
-    labelOf(BSPS_SOLUTIONS, a.bsps_solution).split(" — ")[0],
-    wrapSteps(a.actionable_steps),
+    labelOf(SHIFTS, a.shift || "") || "—",
+    labelOf(PROBLEM_CATEGORIES, a.problem_category || "") || "—",
+    labelOf(DIAGNOSIS_TYPES, a.diagnosis_type || "") || "—",
+    formatEUR(Number(a.estimated_loss_eur ?? 0)),
+    (labelOf(BSPS_SOLUTIONS, a.bsps_solution || "") || "").split(" — ")[0] || "—",
+    a.actionable_steps ? doc.splitTextToSize(a.actionable_steps, stepsTextWidth) : "—",
   ]);
 
   autoTable(doc, {
@@ -177,7 +180,14 @@ export async function downloadExecutiveReport(
     body: rows.length
       ? rows
       : [["—", "—", "—", "—", "—", "—", "No audit entries in scope."]],
-    styles: { font: FONT_FAMILY, fontSize: 8, cellPadding: 5, textColor: [13, 27, 42] },
+    styles: {
+      font: FONT_FAMILY,
+      fontSize: 8,
+      cellPadding: 5,
+      textColor: [13, 27, 42],
+      overflow: "linebreak",
+      valign: "top",
+    },
     headStyles: {
       font: FONT_FAMILY,
       fillColor: [245, 245, 245],
@@ -185,7 +195,11 @@ export async function downloadExecutiveReport(
       fontStyle: "bold",
       fontSize: 7,
     },
-    bodyStyles: { font: FONT_FAMILY },
+    bodyStyles: {
+      font: FONT_FAMILY,
+      overflow: "linebreak",
+      valign: "top",
+    },
     columnStyles: {
       0: { cellWidth: 55 },
       1: { cellWidth: 65 },
@@ -193,7 +207,7 @@ export async function downloadExecutiveReport(
       3: { cellWidth: 85 },
       4: { cellWidth: 60, halign: "right" },
       5: { cellWidth: 55, halign: "right" },
-      6: { cellWidth: "auto", fontStyle: "normal" },
+      6: { cellWidth: col6Width, fontStyle: "normal" },
     },
     margin: { left: margin, right: margin },
     didDrawPage: () => {

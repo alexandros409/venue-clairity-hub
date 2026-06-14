@@ -1,0 +1,1 @@
+ALTER TABLE public.audits DROP CONSTRAINT audits_shift_check; ALTER TABLE public.audits ADD CONSTRAINT audits_shift_check CHECK (shift = ANY (ARRAY['morgen'::text, 'abend'::text]));

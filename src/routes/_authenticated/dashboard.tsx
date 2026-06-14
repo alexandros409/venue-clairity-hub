@@ -202,7 +202,7 @@ function Dashboard() {
                   Recent Critical Bottlenecks
                 </h2>
                 <Link
-                  to="/audits/new"
+                  to="/audits"
                   search={{ venue: activeId }}
                   className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
                 >

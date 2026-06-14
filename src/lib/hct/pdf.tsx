@@ -43,6 +43,7 @@ function wrapSteps(raw: string | undefined): string {
 export async function downloadExecutiveReport(
   venueName: string,
   audits: Audit[],
+  chiefDiagnosis?: string,
 ) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   registerUnicodeFonts(doc);

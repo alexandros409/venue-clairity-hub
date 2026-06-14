@@ -32,7 +32,7 @@ function AuditDetail() {
       <AppHeader />
       <main className="mx-auto max-w-3xl px-6 py-10">
         <Link
-          to="/_authenticated/dashboard"
+          to="/dashboard"
           className="inline-flex items-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-1 h-3 w-3" /> Back to console

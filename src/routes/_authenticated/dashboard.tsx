@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const { venue } = Route.useSearch();
-  const navigate = useNavigate({ from: "/_authenticated/dashboard" });
+  const navigate = useNavigate({ from: "/dashboard" });
   const listVenuesFn = useServerFn(listVenues);
   const listAuditsFn = useServerFn(listAudits);
 
@@ -154,7 +154,7 @@ function Dashboard() {
                   Recent Critical Bottlenecks
                 </h2>
                 <Link
-                  to="/_authenticated/audits/new"
+                  to="/audits/new"
                   search={{ venue: activeId }}
                   className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
                 >
@@ -191,7 +191,7 @@ function Dashboard() {
                           </td>
                           <td className="px-4 py-3">
                             <Link
-                              to="/_authenticated/audits/$id"
+                              to="/audits/$id"
                               params={{ id: a.id }}
                               className="hover:underline"
                             >
@@ -220,7 +220,7 @@ function Dashboard() {
               </div>
               <div className="flex flex-wrap gap-3">
                 <Link
-                  to="/_authenticated/audits/new"
+                  to="/audits/new"
                   search={{ venue: activeId }}
                   className="inline-flex h-11 items-center rounded-sm border border-hairline bg-card px-5 font-mono text-xs uppercase tracking-[0.2em] hover:bg-muted"
                 >

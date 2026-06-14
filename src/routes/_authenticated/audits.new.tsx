@@ -104,7 +104,7 @@ function NewAudit() {
     onSuccess: () => {
       toast.success("Audit entry saved.");
       navigate({
-        to: "/_authenticated/dashboard",
+        to: "/dashboard",
         search: { venue: form.venue_id },
       });
     },
@@ -124,7 +124,7 @@ function NewAudit() {
       <AppHeader />
       <main className="mx-auto max-w-3xl px-6 py-10">
         <Link
-          to="/_authenticated/dashboard"
+          to="/dashboard"
           search={{ venue: form.venue_id || undefined }}
           className="inline-flex items-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
         >

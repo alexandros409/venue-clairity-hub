@@ -10,6 +10,18 @@ import {
   formatEUR,
   formatDate,
 } from "./constants";
+import { NotoSansRegularBase64 } from "./fonts/NotoSansRegular";
+import { NotoSansBoldBase64 } from "./fonts/NotoSansBold";
+
+const FONT_FAMILY = "NotoSans";
+
+function registerUnicodeFonts(doc: jsPDF) {
+  doc.addFileToVFS("NotoSans-Regular.ttf", NotoSansRegularBase64);
+  doc.addFont("NotoSans-Regular.ttf", FONT_FAMILY, "normal");
+  doc.addFileToVFS("NotoSans-Bold.ttf", NotoSansBoldBase64);
+  doc.addFont("NotoSans-Bold.ttf", FONT_FAMILY, "bold");
+  doc.setFont(FONT_FAMILY, "normal");
+}
 
 type Audit = {
   id: string;
@@ -27,6 +39,7 @@ export async function downloadExecutiveReport(
   audits: Audit[],
 ) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
+  registerUnicodeFonts(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 40;
 
@@ -51,7 +64,7 @@ export async function downloadExecutiveReport(
 
   doc.setFontSize(18);
   doc.setTextColor(13, 27, 42);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(FONT_FAMILY, "bold");
   doc.text("Executive Audit Report", margin, margin + 22);
 
   // Gold rule
@@ -60,14 +73,14 @@ export async function downloadExecutiveReport(
   doc.line(margin, margin + 32, pageWidth - margin, margin + 32);
 
   // Meta row
-  doc.setFont("helvetica", "normal");
+  doc.setFont(FONT_FAMILY, "normal");
   doc.setFontSize(7);
   doc.setTextColor(140);
   doc.text("CONSULTANT", margin, margin + 50);
   doc.text("VENUE", margin + 180, margin + 50);
   doc.text("AUDIT PERIOD", margin + 360, margin + 50);
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(FONT_FAMILY, "bold");
   doc.setFontSize(10);
   doc.setTextColor(13, 27, 42);
   doc.text(CONSULTANT_NAME, margin, margin + 64);
@@ -76,7 +89,7 @@ export async function downloadExecutiveReport(
 
   // KPI section
   let y = margin + 96;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(FONT_FAMILY, "normal");
   doc.setFontSize(8);
   doc.setTextColor(140);
   doc.text("EXECUTIVE SUMMARY", margin, y);
@@ -96,17 +109,17 @@ export async function downloadExecutiveReport(
     doc.rect(x, y, kpiW, kpiH);
     doc.setFontSize(7);
     doc.setTextColor(140);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(FONT_FAMILY, "normal");
     doc.text(k.label, x + 10, y + 16);
     doc.setFontSize(18);
     doc.setTextColor(13, 27, 42);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(FONT_FAMILY, "bold");
     doc.text(k.value, x + 10, y + 44);
   });
   y += kpiH + 24;
 
   // Audit details table
-  doc.setFont("helvetica", "normal");
+  doc.setFont(FONT_FAMILY, "normal");
   doc.setFontSize(8);
   doc.setTextColor(140);
   doc.text("AUDIT DETAILS", margin, y);
@@ -127,13 +140,15 @@ export async function downloadExecutiveReport(
     body: rows.length
       ? rows
       : [["—", "—", "No audit entries in scope.", "—", "—", "—"]],
-    styles: { fontSize: 8, cellPadding: 5, textColor: [13, 27, 42] },
+    styles: { font: FONT_FAMILY, fontSize: 8, cellPadding: 5, textColor: [13, 27, 42] },
     headStyles: {
+      font: FONT_FAMILY,
       fillColor: [245, 245, 245],
       textColor: [120, 120, 120],
       fontStyle: "bold",
       fontSize: 7,
     },
+    bodyStyles: { font: FONT_FAMILY },
     columnStyles: {
       0: { cellWidth: 55 },
       1: { cellWidth: 65 },

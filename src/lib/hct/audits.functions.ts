@@ -82,3 +82,15 @@ export const updateAudit = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { id };
   });
+
+export const deleteAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("audits")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { id: data.id };
+  });

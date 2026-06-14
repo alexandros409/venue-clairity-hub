@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import { useState } from "react";
 import { AppHeader } from "@/components/hct/AppHeader";
-import { listAudits } from "@/lib/hct/audits.functions";
+import { listAudits, deleteAudit } from "@/lib/hct/audits.functions";
 import { listVenues } from "@/lib/hct/venues.functions";
 import {
   PROBLEM_CATEGORIES,
@@ -14,7 +15,18 @@ import {
   formatDate,
   labelOf,
 } from "@/lib/hct/constants";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const search = z.object({ venue: z.string().optional() });
 
@@ -28,6 +40,8 @@ function AuditsList() {
   const { venue } = Route.useSearch();
   const listAuditsFn = useServerFn(listAudits);
   const listVenuesFn = useServerFn(listVenues);
+  const deleteFn = useServerFn(deleteAudit);
+  const qc = useQueryClient();
 
   const venuesQ = useQuery({ queryKey: ["venues"], queryFn: () => listVenuesFn() });
   const activeVenue = (venuesQ.data ?? []).find((v) => v.id === venue);
@@ -36,6 +50,18 @@ function AuditsList() {
     queryKey: ["audits", venue ?? "none"],
     queryFn: () => listAuditsFn({ data: { venueId: venue! } }),
     enabled: !!venue,
+  });
+
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; date: string } | null>(null);
+
+  const del = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Audit entry deleted.");
+      qc.invalidateQueries({ queryKey: ["audits"] });
+      setPendingDelete(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not delete entry"),
   });
 
   const audits = q.data ?? [];
@@ -98,20 +124,17 @@ function AuditsList() {
                   <th className="px-4 py-3 text-left font-normal">Category</th>
                   <th className="px-4 py-3 text-right font-normal">Loss</th>
                   <th className="px-4 py-3 text-right font-normal">BSPS</th>
+                  <th className="px-4 py-3 text-right font-normal w-12"></th>
                 </tr>
               </thead>
               <tbody>
                 {audits.map((a) => (
                   <tr
                     key={a.id}
-                    className="cursor-pointer border-b border-hairline last:border-0 hover:bg-muted/40"
+                    className="border-b border-hairline last:border-0 hover:bg-muted/40"
                   >
                     <td className="tabular px-4 py-3">
-                      <Link
-                        to="/audits/$id"
-                        params={{ id: a.id }}
-                        className="block"
-                      >
+                      <Link to="/audits/$id" params={{ id: a.id }} className="block">
                         {formatDate(a.audit_date)}
                       </Link>
                     </td>
@@ -137,6 +160,20 @@ function AuditsList() {
                         </span>
                       </Link>
                     </td>
+                    <td className="px-2 py-3 text-right">
+                      <button
+                        type="button"
+                        aria-label="Delete entry"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPendingDelete({ id: a.id, date: a.audit_date });
+                        }}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -144,6 +181,35 @@ function AuditsList() {
           </div>
         )}
       </main>
+
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => !o && !del.isPending && setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this audit entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete
+                ? `Entry from ${formatDate(pendingDelete.date)} will be permanently removed. This cannot be undone.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={del.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={del.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (pendingDelete) del.mutate(pendingDelete.id);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {del.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -125,6 +125,35 @@ export async function downloadExecutiveReport(
   });
   y += kpiH + 24;
 
+  // Chief Diagnosis (AI-generated narrative)
+  if (chiefDiagnosis && chiefDiagnosis.trim()) {
+    doc.setFont(FONT_FAMILY, "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(140);
+    doc.text("CHIEF DIAGNOSIS", margin, y);
+    y += 10;
+
+    const innerW = pageWidth - margin * 2;
+    const padX = 14;
+    const padY = 14;
+    doc.setFont(FONT_FAMILY, "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(13, 27, 42);
+    const lines = doc.splitTextToSize(chiefDiagnosis.trim(), innerW - padX * 2) as string[];
+    const lineH = 14;
+    const boxH = padY * 2 + lines.length * lineH;
+
+    doc.setDrawColor(201, 168, 76);
+    doc.setLineWidth(0.8);
+    doc.setFillColor(252, 249, 240);
+    doc.rect(margin, y, innerW, boxH, "FD");
+
+    doc.text(lines, margin + padX, y + padY + 10);
+    y += boxH + 24;
+  }
+
+
+
   // Audit details table
   doc.setFont(FONT_FAMILY, "normal");
   doc.setFontSize(8);

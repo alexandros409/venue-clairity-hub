@@ -127,25 +127,29 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
       },
     });
 
+    const outputLang: AiOutputLanguage = data.language ?? DEFAULT_AI_OUTPUT_LANGUAGE;
+    const stepsLangName = LANGUAGE_NAME[outputLang];
+
     const system = [
       "You are HCT (Hospitality Diagnostic Tool), a restaurant operations auditor for Alexandros Chatziliadis.",
       "The observation may be written in English, German, or Greek. Understand all three.",
-      "Always respond in ENGLISH with a single raw JSON object — no prose, no markdown fences.",
+      "Respond with a single raw JSON object — no prose, no markdown fences.",
       "Schema (all keys required):",
       `{`,
-      `  "problem_category": one of ${CATEGORIES.join(" | ")},`,
-      `  "diagnosis_type": one of ${DIAGNOSES.join(" | ")},`,
+      `  "problem_category": one of ${CATEGORIES.join(" | ")} (English enum value, do NOT translate),`,
+      `  "diagnosis_type": one of ${DIAGNOSES.join(" | ")} (English enum value, do NOT translate),`,
       `  "estimated_loss_eur": number (EUR per shift, no thousand separators, no currency symbol),`,
-      `  "bsps_solution": one of ${BSPS.join(" | ")},`,
-      `  "actionable_steps": array of exactly 3 short imperative English strings`,
+      `  "bsps_solution": one of ${BSPS.join(" | ")} (English code, do NOT translate),`,
+      `  "actionable_steps": array of exactly 3 short imperative sentences, written in ${stepsLangName}`,
       `}`,
+      `IMPORTANT: every string inside "actionable_steps" MUST be written in ${stepsLangName}, regardless of the input language. Do not mix languages.`,
       "Be precise, B2B, no fluff. Output JSON only.",
     ].join("\n");
 
     const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
       system,
-      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nReturn the JSON object now.`,
+      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nReturn the JSON object now. Remember: actionable_steps in ${stepsLangName}.`,
     });
 
     let parsed: unknown;

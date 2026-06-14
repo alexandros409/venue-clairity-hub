@@ -34,7 +34,11 @@ type Audit = {
   bsps_solution: string;
 };
 
-export async function downloadExecutiveReport(
+function truncate(text: string, max = 100) {
+  if (text.length <= max) return text;
+  return text.slice(0, max).trimEnd() + "…";
+}
+
   venueName: string,
   audits: Audit[],
 ) {
@@ -128,7 +132,7 @@ export async function downloadExecutiveReport(
   const rows = audits.map((a) => [
     formatDate(a.audit_date),
     labelOf(SHIFTS, a.shift),
-    a.bottleneck,
+    truncate(a.bottleneck, 100),
     labelOf(PROBLEM_CATEGORIES, a.problem_category),
     formatEUR(Number(a.estimated_loss_eur)),
     labelOf(BSPS_SOLUTIONS, a.bsps_solution).split(" — ")[0],

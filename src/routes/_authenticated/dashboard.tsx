@@ -18,6 +18,7 @@ import {
   labelOf,
 } from "@/lib/hct/constants";
 import { downloadExecutiveReport } from "@/lib/hct/pdf";
+import { generateChiefDiagnosis } from "@/lib/hct/ai.functions";
 import { FileDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -96,11 +97,35 @@ function Dashboard() {
   );
 
   const [exporting, setExporting] = useState(false);
+  const diagnosisFn = useServerFn(generateChiefDiagnosis);
   async function onExport() {
     if (!activeVenue) return;
     setExporting(true);
     try {
-      await downloadExecutiveReport(activeVenue.name, audits);
+      let chiefDiagnosis = "";
+      try {
+        const r = await diagnosisFn({
+          data: {
+            venueName: activeVenue.name,
+            audits: audits.map((a) => ({
+              audit_date: a.audit_date,
+              shift: a.shift,
+              problem_category: a.problem_category,
+              diagnosis_type: a.diagnosis_type,
+              estimated_loss_eur: a.estimated_loss_eur,
+              bsps_solution: a.bsps_solution,
+              bottleneck: a.bottleneck,
+            })),
+          },
+        });
+        chiefDiagnosis = r.text;
+      } catch (e) {
+        toast.warning(
+          "Chief Diagnosis unavailable — exporting without AI summary.",
+        );
+        console.error(e);
+      }
+      await downloadExecutiveReport(activeVenue.name, audits, chiefDiagnosis);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");
     } finally {
@@ -177,7 +202,7 @@ function Dashboard() {
                   Recent Critical Bottlenecks
                 </h2>
                 <Link
-                  to="/audits/new"
+                  to="/audits"
                   search={{ venue: activeId }}
                   className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
                 >

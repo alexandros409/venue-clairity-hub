@@ -10,6 +10,18 @@ import {
   formatEUR,
   formatDate,
 } from "./constants";
+import { NotoSansRegularBase64 } from "./fonts/NotoSansRegular";
+import { NotoSansBoldBase64 } from "./fonts/NotoSansBold";
+
+const FONT_FAMILY = "NotoSans";
+
+function registerUnicodeFonts(doc: jsPDF) {
+  doc.addFileToVFS("NotoSans-Regular.ttf", NotoSansRegularBase64);
+  doc.addFont("NotoSans-Regular.ttf", FONT_FAMILY, "normal");
+  doc.addFileToVFS("NotoSans-Bold.ttf", NotoSansBoldBase64);
+  doc.addFont("NotoSans-Bold.ttf", FONT_FAMILY, "bold");
+  doc.setFont(FONT_FAMILY, "normal");
+}
 
 type Audit = {
   id: string;

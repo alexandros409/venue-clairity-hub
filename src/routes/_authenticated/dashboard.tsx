@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { useMemo, useState } from "react";
 import { AppHeader } from "@/components/hct/AppHeader";
@@ -21,7 +21,7 @@ import { downloadExecutiveReport } from "@/lib/hct/pdf";
 import { FileDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-const search = z.object({ venue: fallback(z.string().optional(), undefined) });
+const search = z.object({ venue: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   validateSearch: zodValidator(search),
@@ -58,8 +58,7 @@ function Dashboard() {
   });
 
   const venues = venuesQ.data ?? [];
-  const activeVenue =
-    venues.find((v) => v.id === venue) ?? venues[0];
+  const activeVenue = venues.find((v) => v.id === venue);
   const activeId = activeVenue?.id;
 
   const auditsQ = useQuery({
@@ -133,10 +132,17 @@ function Dashboard() {
         </div>
 
         {!activeVenue ? (
-          <EmptyState
-            title="No venue yet"
-            body="Add your first venue to begin logging operational bottlenecks."
-          />
+          venues.length === 0 ? (
+            <EmptyState
+              title="No venue yet"
+              body="Add your first venue to begin logging operational bottlenecks."
+            />
+          ) : (
+            <EmptyState
+              title="Select a venue to begin"
+              body="Choose a venue from the selector above to view audits and metrics."
+            />
+          )
         ) : (
           <>
             <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">

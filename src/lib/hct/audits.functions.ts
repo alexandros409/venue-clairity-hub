@@ -57,3 +57,28 @@ export const createAudit = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return row;
   });
+
+const UpdateInput = z.object({
+  id: z.string().uuid(),
+  audit_date: z.string().min(8),
+  shift: z.enum(["morgen", "abend"]),
+  bottleneck: z.string().min(1),
+  problem_category: z.string().min(1),
+  diagnosis_type: z.enum(["structure", "emotion", "both"]),
+  estimated_loss_eur: z.number().nonnegative(),
+  bsps_solution: z.string().min(1),
+  actionable_steps: z.string().default(""),
+});
+
+export const updateAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => UpdateInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { id, ...patch } = data;
+    const { error } = await context.supabase
+      .from("audits")
+      .update(patch)
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+    return { id };
+  });

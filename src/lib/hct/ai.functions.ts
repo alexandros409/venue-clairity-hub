@@ -165,3 +165,82 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
     }
     return coerce(parsed as Record<string, unknown>);
   });
+
+const DiagnosisInput = z.object({
+  venueName: z.string().min(1),
+  audits: z.array(
+    z.object({
+      audit_date: z.string(),
+      shift: z.string(),
+      problem_category: z.string(),
+      diagnosis_type: z.string(),
+      estimated_loss_eur: z.union([z.number(), z.string()]),
+      bsps_solution: z.string(),
+      bottleneck: z.string(),
+    }),
+  ),
+  language: z.enum(AI_OUTPUT_LANGUAGES).optional(),
+});
+
+export const generateChiefDiagnosis = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => DiagnosisInput.parse(d))
+  .handler(async ({ data }): Promise<{ text: string }> => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+
+    if (data.audits.length === 0) {
+      return { text: "" };
+    }
+
+    const gateway = createOpenAICompatible({
+      name: "lovable",
+      baseURL: "https://ai.gateway.lovable.dev/v1",
+      headers: {
+        "Lovable-API-Key": key,
+        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+      },
+    });
+
+    const outputLang: AiOutputLanguage = data.language ?? DEFAULT_AI_OUTPUT_LANGUAGE;
+    const langName = LANGUAGE_NAME[outputLang];
+
+    const totalLoss = data.audits.reduce(
+      (a, b) => a + Number(b.estimated_loss_eur || 0),
+      0,
+    );
+
+    const summaryLines = data.audits
+      .map(
+        (a, i) =>
+          `${i + 1}. [${a.audit_date} · ${a.shift}] cat=${a.problem_category} diag=${a.diagnosis_type} loss=${a.estimated_loss_eur}€ bsps=${a.bsps_solution} — ${a.bottleneck.slice(0, 240)}`,
+      )
+      .join("\n");
+
+    const system = [
+      "You are HCT (Hospitality Diagnostic Tool), senior restaurant operations auditor for Alexandros Chatziliadis.",
+      "You write a single executive paragraph called 'Chief Diagnosis' for the venue owner.",
+      `Write strictly in ${langName}. Do not mix languages.`,
+      "Exactly 3 to 5 sentences. No bullet lists, no headings, no markdown — plain prose only.",
+      "Cover: (1) overall operational situation of the venue, (2) the most critical recurring pattern across the audits, (3) where the owner must focus FIRST.",
+      "Be specific, B2B, no fluff, no greetings, no closing line.",
+    ].join("\n");
+
+    const prompt = [
+      `Venue: ${data.venueName}`,
+      `Total audited financial loss: ${totalLoss}€`,
+      `Number of observations: ${data.audits.length}`,
+      "",
+      "Observations:",
+      summaryLines,
+      "",
+      `Now write the Chief Diagnosis paragraph in ${langName}.`,
+    ].join("\n");
+
+    const { text } = await generateText({
+      model: gateway("google/gemini-3-flash-preview"),
+      system,
+      prompt,
+    });
+
+    return { text: text.trim() };
+  });

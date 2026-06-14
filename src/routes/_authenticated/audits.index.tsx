@@ -115,70 +115,49 @@ function AuditsList() {
         )}
 
         {audits.length > 0 && (
-          <div className="mt-8 overflow-hidden rounded-sm border border-hairline bg-card">
-            <table className="w-full text-sm">
-              <thead className="border-b border-hairline text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 text-left font-normal">Date</th>
-                  <th className="px-4 py-3 text-left font-normal">Shift</th>
-                  <th className="px-4 py-3 text-left font-normal">Category</th>
-                  <th className="px-4 py-3 text-right font-normal">Loss</th>
-                  <th className="px-4 py-3 text-right font-normal">BSPS</th>
-                  <th className="px-4 py-3 text-right font-normal w-12"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {audits.map((a) => (
-                  <tr
-                    key={a.id}
-                    className="border-b border-hairline last:border-0 hover:bg-muted/40"
-                  >
-                    <td className="tabular px-4 py-3">
-                      <Link to="/audits/$id" params={{ id: a.id }} className="block">
-                        {formatDate(a.audit_date)}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      <Link to="/audits/$id" params={{ id: a.id }} className="block">
-                        {labelOf(SHIFTS, a.shift)}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link to="/audits/$id" params={{ id: a.id }} className="block hover:underline">
-                        {labelOf(PROBLEM_CATEGORIES, a.problem_category)}
-                      </Link>
-                    </td>
-                    <td className="tabular px-4 py-3 text-right font-medium">
-                      <Link to="/audits/$id" params={{ id: a.id }} className="block">
-                        {formatEUR(Number(a.estimated_loss_eur))}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link to="/audits/$id" params={{ id: a.id }} className="block">
-                        <span className="inline-flex items-center rounded-sm border border-gold/40 bg-gold/10 px-2 py-0.5 font-mono text-[10px] text-foreground">
-                          {labelOf(BSPS_SOLUTIONS, a.bsps_solution).split(" — ")[0]}
-                        </span>
-                      </Link>
-                    </td>
-                    <td className="px-2 py-3 text-right">
-                      <button
-                        type="button"
-                        aria-label="Delete entry"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setPendingDelete({ id: a.id, date: a.audit_date });
-                        }}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="mt-8 divide-y divide-hairline overflow-hidden rounded-sm border border-hairline bg-card">
+            {audits.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-stretch gap-2 hover:bg-muted/40"
+              >
+                <Link
+                  to="/audits/$id"
+                  params={{ id: a.id }}
+                  className="flex min-w-0 flex-1 flex-col gap-1 px-4 py-3"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="tabular text-sm font-medium">
+                      {formatDate(a.audit_date)}
+                    </span>
+                    <span className="tabular text-sm font-medium">
+                      {formatEUR(Number(a.estimated_loss_eur))}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+                    <span className="truncate">
+                      {labelOf(SHIFTS, a.shift)} · {labelOf(PROBLEM_CATEGORIES, a.problem_category)}
+                    </span>
+                    <span className="inline-flex shrink-0 items-center rounded-sm border border-gold/40 bg-gold/10 px-2 py-0.5 font-mono text-[10px] text-foreground">
+                      {labelOf(BSPS_SOLUTIONS, a.bsps_solution).split(" — ")[0]}
+                    </span>
+                  </div>
+                </Link>
+                <button
+                  type="button"
+                  aria-label="Delete entry"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setPendingDelete({ id: a.id, date: a.audit_date });
+                  }}
+                  className="flex w-12 shrink-0 items-center justify-center border-l border-hairline text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </main>
 

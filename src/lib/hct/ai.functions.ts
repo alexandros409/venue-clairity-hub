@@ -3,7 +3,24 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-const Input = z.object({ bottleneck: z.string().min(4) });
+// Supported output languages for AI-generated content.
+// Phase 1: only `actionable_steps` is localized, and only Greek is wired in the UI.
+// Phase 2: a language selector in the UI will pass `language` to localize
+// problem category labels, diagnosis explanation, and actionable steps.
+export const AI_OUTPUT_LANGUAGES = ["el", "de", "en"] as const;
+export type AiOutputLanguage = (typeof AI_OUTPUT_LANGUAGES)[number];
+export const DEFAULT_AI_OUTPUT_LANGUAGE: AiOutputLanguage = "el";
+
+const LANGUAGE_NAME: Record<AiOutputLanguage, string> = {
+  el: "Greek (Ελληνικά)",
+  de: "German (Deutsch)",
+  en: "English",
+};
+
+const Input = z.object({
+  bottleneck: z.string().min(4),
+  language: z.enum(AI_OUTPUT_LANGUAGES).optional(),
+});
 
 const CATEGORIES = [
   "kitchen_pass",

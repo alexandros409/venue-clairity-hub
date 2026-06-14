@@ -159,10 +159,13 @@ export async function downloadExecutiveReport(
   doc.text("AUDIT DETAILS", margin, y);
   y += 8;
 
-  // Pre-calculate wrapped actionable steps using the correct font metrics
   doc.setFont(FONT_FAMILY, "normal");
   doc.setFontSize(8);
-  const stepsTextWidth = col6Width - 10; // subtract cellPadding × 2
+
+  // Normalize actionable steps: collapse whitespace, keep as a single string
+  // so autoTable handles wrapping without injecting commas or hyphenating words.
+  const cleanSteps = (s?: string) =>
+    (s ?? "").replace(/\s+/g, " ").trim();
 
   const rows = audits.map((a) => [
     formatDate(a.audit_date),
@@ -171,7 +174,7 @@ export async function downloadExecutiveReport(
     labelOf(DIAGNOSIS_TYPES, a.diagnosis_type || "") || "—",
     formatEUR(Number(a.estimated_loss_eur ?? 0)),
     (labelOf(BSPS_SOLUTIONS, a.bsps_solution || "") || "").split(" — ")[0] || "—",
-    a.actionable_steps ? doc.splitTextToSize(a.actionable_steps, stepsTextWidth) : "—",
+    cleanSteps(a.actionable_steps) || "—",
   ]);
 
   autoTable(doc, {

@@ -27,6 +27,23 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   validateSearch: zodValidator(search),
   head: () => ({ meta: [{ title: "Dashboard — HCT" }] }),
   component: Dashboard,
+  errorComponent: ({ error, reset }) => (
+    <div className="mx-auto max-w-md px-6 py-24 text-center">
+      <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+        Console unavailable
+      </div>
+      <p className="mt-4 text-sm text-muted-foreground">
+        {error instanceof Error ? error.message : "Failed to load dashboard."}
+      </p>
+      <button
+        onClick={reset}
+        className="mt-6 inline-flex h-10 items-center rounded-sm border border-hairline bg-card px-5 font-mono text-xs uppercase tracking-[0.2em] hover:bg-muted"
+      >
+        Retry
+      </button>
+    </div>
+  ),
+  notFoundComponent: () => <div className="p-10 text-sm">Not found.</div>,
 });
 
 function Dashboard() {

@@ -18,6 +18,7 @@ import {
   labelOf,
 } from "@/lib/hct/constants";
 import { downloadExecutiveReport } from "@/lib/hct/pdf";
+import { generateChiefDiagnosis } from "@/lib/hct/ai.functions";
 import { FileDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 

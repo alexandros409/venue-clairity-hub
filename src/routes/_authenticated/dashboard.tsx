@@ -132,10 +132,17 @@ function Dashboard() {
         </div>
 
         {!activeVenue ? (
-          <EmptyState
-            title="No venue yet"
-            body="Add your first venue to begin logging operational bottlenecks."
-          />
+          venues.length === 0 ? (
+            <EmptyState
+              title="No venue yet"
+              body="Add your first venue to begin logging operational bottlenecks."
+            />
+          ) : (
+            <EmptyState
+              title="Select a venue to begin"
+              body="Choose a venue from the selector above to view audits and metrics."
+            />
+          )
         ) : (
           <>
             <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">

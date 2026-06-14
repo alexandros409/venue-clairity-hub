@@ -14,7 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audits: {
+        Row: {
+          actionable_steps: string
+          audit_date: string
+          bottleneck: string
+          bsps_solution: string
+          created_at: string
+          diagnosis_type: string
+          estimated_loss_eur: number
+          id: string
+          owner_id: string
+          problem_category: string
+          shift: string
+          venue_id: string
+        }
+        Insert: {
+          actionable_steps?: string
+          audit_date: string
+          bottleneck: string
+          bsps_solution: string
+          created_at?: string
+          diagnosis_type: string
+          estimated_loss_eur?: number
+          id?: string
+          owner_id: string
+          problem_category: string
+          shift: string
+          venue_id: string
+        }
+        Update: {
+          actionable_steps?: string
+          audit_date?: string
+          bottleneck?: string
+          bsps_solution?: string
+          created_at?: string
+          diagnosis_type?: string
+          estimated_loss_eur?: number
+          id?: string
+          owner_id?: string
+          problem_category?: string
+          shift?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venues: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

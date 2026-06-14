@@ -105,7 +105,9 @@ function coerce(obj: Record<string, unknown>): Analysis {
     actionable_steps: steps(obj.actionable_steps),
   };
   if (candidate.actionable_steps.length === 0) {
-    candidate.actionable_steps = ["Review observation with shift lead and define corrective action."];
+    candidate.actionable_steps = [
+      "Συζητήστε την παρατήρηση με τον υπεύθυνο βάρδιας και ορίστε διορθωτική ενέργεια.",
+    ];
   }
   return AnalysisSchema.parse(candidate);
 }

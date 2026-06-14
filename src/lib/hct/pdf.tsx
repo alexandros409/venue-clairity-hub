@@ -63,7 +63,7 @@ export async function downloadExecutiveReport(
 
   doc.setFontSize(18);
   doc.setTextColor(13, 27, 42);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(FONT_FAMILY, "bold");
   doc.text("Executive Audit Report", margin, margin + 22);
 
   // Gold rule
@@ -72,14 +72,14 @@ export async function downloadExecutiveReport(
   doc.line(margin, margin + 32, pageWidth - margin, margin + 32);
 
   // Meta row
-  doc.setFont("helvetica", "normal");
+  doc.setFont(FONT_FAMILY, "normal");
   doc.setFontSize(7);
   doc.setTextColor(140);
   doc.text("CONSULTANT", margin, margin + 50);
   doc.text("VENUE", margin + 180, margin + 50);
   doc.text("AUDIT PERIOD", margin + 360, margin + 50);
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(FONT_FAMILY, "bold");
   doc.setFontSize(10);
   doc.setTextColor(13, 27, 42);
   doc.text(CONSULTANT_NAME, margin, margin + 64);
@@ -88,7 +88,7 @@ export async function downloadExecutiveReport(
 
   // KPI section
   let y = margin + 96;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(FONT_FAMILY, "normal");
   doc.setFontSize(8);
   doc.setTextColor(140);
   doc.text("EXECUTIVE SUMMARY", margin, y);
@@ -108,17 +108,17 @@ export async function downloadExecutiveReport(
     doc.rect(x, y, kpiW, kpiH);
     doc.setFontSize(7);
     doc.setTextColor(140);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(FONT_FAMILY, "normal");
     doc.text(k.label, x + 10, y + 16);
     doc.setFontSize(18);
     doc.setTextColor(13, 27, 42);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(FONT_FAMILY, "bold");
     doc.text(k.value, x + 10, y + 44);
   });
   y += kpiH + 24;
 
   // Audit details table
-  doc.setFont("helvetica", "normal");
+  doc.setFont(FONT_FAMILY, "normal");
   doc.setFontSize(8);
   doc.setTextColor(140);
   doc.text("AUDIT DETAILS", margin, y);

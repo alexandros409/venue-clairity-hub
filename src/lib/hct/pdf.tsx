@@ -140,13 +140,15 @@ export async function downloadExecutiveReport(
     body: rows.length
       ? rows
       : [["—", "—", "No audit entries in scope.", "—", "—", "—"]],
-    styles: { fontSize: 8, cellPadding: 5, textColor: [13, 27, 42] },
+    styles: { font: FONT_FAMILY, fontSize: 8, cellPadding: 5, textColor: [13, 27, 42] },
     headStyles: {
+      font: FONT_FAMILY,
       fillColor: [245, 245, 245],
       textColor: [120, 120, 120],
       fontStyle: "bold",
       fontSize: 7,
     },
+    bodyStyles: { font: FONT_FAMILY },
     columnStyles: {
       0: { cellWidth: 55 },
       1: { cellWidth: 65 },

@@ -1,27 +1,101 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { generateText, Output } from "ai";
+import { generateText } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 const Input = z.object({ bottleneck: z.string().min(4) });
 
+const CATEGORIES = [
+  "kitchen_pass",
+  "billing_checkout",
+  "service_flow",
+  "staff_fatigue",
+  "leadership_boundaries",
+] as const;
+const DIAGNOSES = ["structure", "emotion", "both"] as const;
+const BSPS = ["BSPS-01", "BSPS-02", "BSPS-03"] as const;
+
 const AnalysisSchema = z.object({
-  problem_category: z.enum([
-    "kitchen_pass",
-    "billing_checkout",
-    "service_flow",
-    "staff_fatigue",
-    "leadership_boundaries",
-  ]),
-  diagnosis_type: z.enum(["structure", "emotion", "both"]),
+  problem_category: z.enum(CATEGORIES),
+  diagnosis_type: z.enum(DIAGNOSES),
   estimated_loss_eur: z.number().nonnegative(),
-  bsps_solution: z.enum(["BSPS-01", "BSPS-02", "BSPS-03"]),
-  actionable_steps: z.array(z.string()).length(3),
+  bsps_solution: z.enum(BSPS),
+  actionable_steps: z.array(z.string()).min(1),
 });
+
+export type Analysis = z.infer<typeof AnalysisSchema>;
+
+function extractJson(raw: string): unknown {
+  let s = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+  const start = s.search(/[{[]/);
+  const openChar = start !== -1 ? s[start] : "";
+  const endChar = openChar === "[" ? "]" : "}";
+  const end = s.lastIndexOf(endChar);
+  if (start === -1 || end === -1) throw new Error("No JSON found in model response");
+  s = s.substring(start, end + 1);
+  try {
+    return JSON.parse(s);
+  } catch {
+    const repaired = s
+      .replace(/,\s*}/g, "}")
+      .replace(/,\s*]/g, "]")
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, "");
+    return JSON.parse(repaired);
+  }
+}
+
+function coerce(obj: Record<string, unknown>): Analysis {
+  const pickEnum = <T extends readonly string[]>(
+    val: unknown,
+    list: T,
+    fallback: T[number],
+  ): T[number] => {
+    if (typeof val !== "string") return fallback;
+    const v = val.toLowerCase().replace(/[\s_-]+/g, "_");
+    const hit = list.find((x) => x.toLowerCase() === v || v.includes(x.toLowerCase()));
+    return (hit as T[number]) ?? fallback;
+  };
+
+  const num = (v: unknown): number => {
+    if (typeof v === "number") return Math.max(0, v);
+    if (typeof v === "string") {
+      // strip currency, spaces, thousand separators (both . and ,)
+      const cleaned = v.replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}\b)/g, "").replace(",", ".");
+      const n = parseFloat(cleaned);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    }
+    return 0;
+  };
+
+  const steps = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.map(String).filter(Boolean).slice(0, 5);
+    if (typeof v === "string") return v.split(/\n+/).map((s) => s.trim()).filter(Boolean).slice(0, 5);
+    return [];
+  };
+
+  let bsps = pickEnum(obj.bsps_solution, BSPS, "BSPS-01");
+  if (typeof obj.bsps_solution === "string") {
+    const m = obj.bsps_solution.match(/BSPS[\s-]?0?([123])/i);
+    if (m) bsps = `BSPS-0${m[1]}` as (typeof BSPS)[number];
+  }
+
+  const candidate = {
+    problem_category: pickEnum(obj.problem_category, CATEGORIES, "service_flow"),
+    diagnosis_type: pickEnum(obj.diagnosis_type, DIAGNOSES, "both"),
+    estimated_loss_eur: num(obj.estimated_loss_eur),
+    bsps_solution: bsps,
+    actionable_steps: steps(obj.actionable_steps),
+  };
+  if (candidate.actionable_steps.length === 0) {
+    candidate.actionable_steps = ["Review observation with shift lead and define corrective action."];
+  }
+  return AnalysisSchema.parse(candidate);
+}
 
 export const analyzeBottleneck = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<Analysis> => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
@@ -34,18 +108,37 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
       },
     });
 
-    const { experimental_output } = await generateText({
+    const system = [
+      "You are HCT (Hospitality Diagnostic Tool), a restaurant operations auditor for Alexandros Chatziliadis.",
+      "The observation may be written in English, German, or Greek. Understand all three.",
+      "Always respond in ENGLISH with a single raw JSON object — no prose, no markdown fences.",
+      "Schema (all keys required):",
+      `{`,
+      `  "problem_category": one of ${CATEGORIES.join(" | ")},`,
+      `  "diagnosis_type": one of ${DIAGNOSES.join(" | ")},`,
+      `  "estimated_loss_eur": number (EUR per shift, no thousand separators, no currency symbol),`,
+      `  "bsps_solution": one of ${BSPS.join(" | ")},`,
+      `  "actionable_steps": array of exactly 3 short imperative English strings`,
+      `}`,
+      "Be precise, B2B, no fluff. Output JSON only.",
+    ].join("\n");
+
+    const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
-      experimental_output: Output.object({ schema: AnalysisSchema }),
-      system:
-        "You are HCT (Hospitality Diagnostic Tool), a restaurant operations auditor for Alexandros Chatziliadis. " +
-        "Diagnose a single operational bottleneck observed during a restaurant shift. " +
-        "Map to one problem_category, one diagnosis_type (structure / emotion / both), " +
-        "estimate the audited financial loss in EUR per shift (a single number, conservative), " +
-        "recommend one BSPS module, and write exactly three short imperative actionable_steps. " +
-        "Be precise, B2B, no fluff.",
-      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""`,
+      system,
+      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nReturn the JSON object now.`,
     });
 
-    return experimental_output;
+    let parsed: unknown;
+    try {
+      parsed = extractJson(text);
+    } catch (e) {
+      throw new Error(
+        `AI returned an unparseable response. ${e instanceof Error ? e.message : ""}`.trim(),
+      );
+    }
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("AI response was not a JSON object.");
+    }
+    return coerce(parsed as Record<string, unknown>);
   });

@@ -39,6 +39,7 @@ function truncate(text: string, max = 100) {
   return text.slice(0, max).trimEnd() + "…";
 }
 
+export async function downloadExecutiveReport(
   venueName: string,
   audits: Audit[],
 ) {

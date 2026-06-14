@@ -3,7 +3,24 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-const Input = z.object({ bottleneck: z.string().min(4) });
+// Supported output languages for AI-generated content.
+// Phase 1: only `actionable_steps` is localized, and only Greek is wired in the UI.
+// Phase 2: a language selector in the UI will pass `language` to localize
+// problem category labels, diagnosis explanation, and actionable steps.
+export const AI_OUTPUT_LANGUAGES = ["el", "de", "en"] as const;
+export type AiOutputLanguage = (typeof AI_OUTPUT_LANGUAGES)[number];
+export const DEFAULT_AI_OUTPUT_LANGUAGE: AiOutputLanguage = "el";
+
+const LANGUAGE_NAME: Record<AiOutputLanguage, string> = {
+  el: "Greek (Ελληνικά)",
+  de: "German (Deutsch)",
+  en: "English",
+};
+
+const Input = z.object({
+  bottleneck: z.string().min(4),
+  language: z.enum(AI_OUTPUT_LANGUAGES).optional(),
+});
 
 const CATEGORIES = [
   "kitchen_pass",
@@ -88,7 +105,9 @@ function coerce(obj: Record<string, unknown>): Analysis {
     actionable_steps: steps(obj.actionable_steps),
   };
   if (candidate.actionable_steps.length === 0) {
-    candidate.actionable_steps = ["Review observation with shift lead and define corrective action."];
+    candidate.actionable_steps = [
+      "Συζητήστε την παρατήρηση με τον υπεύθυνο βάρδιας και ορίστε διορθωτική ενέργεια.",
+    ];
   }
   return AnalysisSchema.parse(candidate);
 }
@@ -108,25 +127,29 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
       },
     });
 
+    const outputLang: AiOutputLanguage = data.language ?? DEFAULT_AI_OUTPUT_LANGUAGE;
+    const stepsLangName = LANGUAGE_NAME[outputLang];
+
     const system = [
       "You are HCT (Hospitality Diagnostic Tool), a restaurant operations auditor for Alexandros Chatziliadis.",
       "The observation may be written in English, German, or Greek. Understand all three.",
-      "Always respond in ENGLISH with a single raw JSON object — no prose, no markdown fences.",
+      "Respond with a single raw JSON object — no prose, no markdown fences.",
       "Schema (all keys required):",
       `{`,
-      `  "problem_category": one of ${CATEGORIES.join(" | ")},`,
-      `  "diagnosis_type": one of ${DIAGNOSES.join(" | ")},`,
+      `  "problem_category": one of ${CATEGORIES.join(" | ")} (English enum value, do NOT translate),`,
+      `  "diagnosis_type": one of ${DIAGNOSES.join(" | ")} (English enum value, do NOT translate),`,
       `  "estimated_loss_eur": number (EUR per shift, no thousand separators, no currency symbol),`,
-      `  "bsps_solution": one of ${BSPS.join(" | ")},`,
-      `  "actionable_steps": array of exactly 3 short imperative English strings`,
+      `  "bsps_solution": one of ${BSPS.join(" | ")} (English code, do NOT translate),`,
+      `  "actionable_steps": array of exactly 3 short imperative sentences, written in ${stepsLangName}`,
       `}`,
+      `IMPORTANT: every string inside "actionable_steps" MUST be written in ${stepsLangName}, regardless of the input language. Do not mix languages.`,
       "Be precise, B2B, no fluff. Output JSON only.",
     ].join("\n");
 
     const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
       system,
-      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nReturn the JSON object now.`,
+      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nReturn the JSON object now. Remember: actionable_steps in ${stepsLangName}.`,
     });
 
     let parsed: unknown;

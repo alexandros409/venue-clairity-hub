@@ -58,8 +58,7 @@ function Dashboard() {
   });
 
   const venues = venuesQ.data ?? [];
-  const activeVenue =
-    venues.find((v) => v.id === venue) ?? venues[0];
+  const activeVenue = venues.find((v) => v.id === venue);
   const activeId = activeVenue?.id;
 
   const auditsQ = useQuery({

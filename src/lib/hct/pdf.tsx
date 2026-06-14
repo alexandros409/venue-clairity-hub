@@ -4,6 +4,7 @@ import autoTable from "jspdf-autotable";
 import {
   CONSULTANT_NAME,
   PROBLEM_CATEGORIES,
+  DIAGNOSIS_TYPES,
   BSPS_SOLUTIONS,
   SHIFTS,
   labelOf,
@@ -27,16 +28,16 @@ type Audit = {
   id: string;
   audit_date: string;
   shift: string;
-  bottleneck: string;
   problem_category: string;
   diagnosis_type: string;
   estimated_loss_eur: number | string;
   bsps_solution: string;
+  actionable_steps?: string;
 };
 
-function truncate(text: string, max = 100) {
-  if (text.length <= max) return text;
-  return text.slice(0, max).trimEnd() + "…";
+function wrapSteps(raw: string | undefined): string {
+  if (!raw) return "—";
+  return raw;
 }
 
 export async function downloadExecutiveReport(
@@ -133,18 +134,19 @@ export async function downloadExecutiveReport(
   const rows = audits.map((a) => [
     formatDate(a.audit_date),
     labelOf(SHIFTS, a.shift),
-    truncate(a.bottleneck, 100),
     labelOf(PROBLEM_CATEGORIES, a.problem_category),
+    labelOf(DIAGNOSIS_TYPES, a.diagnosis_type),
     formatEUR(Number(a.estimated_loss_eur)),
     labelOf(BSPS_SOLUTIONS, a.bsps_solution).split(" — ")[0],
+    wrapSteps(a.actionable_steps),
   ]);
 
   autoTable(doc, {
     startY: y + 4,
-    head: [["Date", "Shift", "Bottleneck", "Category", "Loss", "BSPS"]],
+    head: [["Date", "Shift", "Category", "Diagnosis Type", "Financial Loss", "BSPS Solution", "Actionable Steps"]],
     body: rows.length
       ? rows
-      : [["—", "—", "No audit entries in scope.", "—", "—", "—"]],
+      : [["—", "—", "—", "—", "—", "—", "No audit entries in scope."]],
     styles: { font: FONT_FAMILY, fontSize: 8, cellPadding: 5, textColor: [13, 27, 42] },
     headStyles: {
       font: FONT_FAMILY,
@@ -157,10 +159,11 @@ export async function downloadExecutiveReport(
     columnStyles: {
       0: { cellWidth: 55 },
       1: { cellWidth: 65 },
-      2: { cellWidth: "auto" },
-      3: { cellWidth: 100 },
-      4: { cellWidth: 55, halign: "right" },
-      5: { cellWidth: 50, halign: "right" },
+      2: { cellWidth: 100 },
+      3: { cellWidth: 85 },
+      4: { cellWidth: 60, halign: "right" },
+      5: { cellWidth: 55, halign: "right" },
+      6: { cellWidth: "auto", fontStyle: "normal" },
     },
     margin: { left: margin, right: margin },
     didDrawPage: () => {

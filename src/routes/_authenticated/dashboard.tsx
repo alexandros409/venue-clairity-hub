@@ -21,7 +21,7 @@ import { downloadExecutiveReport } from "@/lib/hct/pdf";
 import { FileDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-const search = z.object({ venue: fallback(z.string().optional(), undefined) });
+const search = z.object({ venue: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   validateSearch: zodValidator(search),

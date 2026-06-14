@@ -39,6 +39,7 @@ export async function downloadExecutiveReport(
   audits: Audit[],
 ) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
+  registerUnicodeFonts(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 40;
 

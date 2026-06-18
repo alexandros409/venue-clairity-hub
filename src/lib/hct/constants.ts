@@ -1,6 +1,6 @@
 export const CONSULTANT_NAME = "Alexandros Chatziliadis";
-export const APP_NAME = "HCT";
-export const APP_LONG_NAME = "Hospitality Diagnostic Tool";
+export const APP_NAME = "SDT";
+export const APP_LONG_NAME = "Service Diagnostic Tool";
 
 export const SHIFTS = [
   { value: "morgen", label: "Morgen-Schicht" },

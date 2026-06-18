@@ -31,7 +31,7 @@ const search = z.object({ venue: fallback(z.string().optional(), undefined) });
 
 export const Route = createFileRoute("/_authenticated/audits/new")({
   validateSearch: zodValidator(search),
-  head: () => ({ meta: [{ title: "New Audit — HCT" }] }),
+  head: () => ({ meta: [{ title: "New Audit — SDT" }] }),
   component: NewAudit,
 });
 

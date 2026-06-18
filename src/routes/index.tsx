@@ -4,13 +4,13 @@ import { APP_LONG_NAME, APP_NAME, CONSULTANT_NAME } from "@/lib/hct/constants";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "HCT — Hospitality Diagnostic Tool" },
+      { title: "SDT — Service Diagnostic Tool" },
       {
         name: "description",
         content:
           "Premium B2B diagnostic & audit tool for restaurant operations. Quantify bottlenecks, financial loss, and BSPS solutions.",
       },
-      { property: "og:title", content: "HCT — Hospitality Diagnostic Tool" },
+      { property: "og:title", content: "SDT — Service Diagnostic Tool" },
       {
         property: "og:description",
         content:
@@ -40,7 +40,7 @@ function Landing() {
 
         <section className="flex flex-1 flex-col justify-center pb-24 pt-12">
           <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-            Restaurant Operational Diagnostics
+            Service Operational Diagnostics
           </div>
           <h1 className="mt-6 max-w-3xl text-5xl font-medium leading-[1.05] tracking-tight md:text-7xl">
             {APP_LONG_NAME}.

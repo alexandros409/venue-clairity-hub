@@ -7,7 +7,7 @@ import { APP_NAME } from "@/lib/hct/constants";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Sign in — HCT" }] }),
+  head: () => ({ meta: [{ title: "Sign in — SDT" }] }),
   component: AuthPage,
 });
 

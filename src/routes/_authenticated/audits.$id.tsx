@@ -24,7 +24,7 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/audits/$id")({
-  head: () => ({ meta: [{ title: "Audit Entry — HCT" }] }),
+  head: () => ({ meta: [{ title: "Audit Entry — SDT" }] }),
   component: AuditDetail,
 });
 

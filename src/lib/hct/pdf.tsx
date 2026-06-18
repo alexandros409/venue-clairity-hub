@@ -65,7 +65,7 @@ export async function downloadExecutiveReport(
   // Header band
   doc.setFontSize(8);
   doc.setTextColor(120);
-  doc.text("HCT — HOSPITALITY DIAGNOSTIC TOOL", margin, margin);
+  doc.text("SDT — SERVICE DIAGNOSTIC TOOL", margin, margin);
 
   doc.setFontSize(18);
   doc.setTextColor(13, 27, 42);
@@ -233,7 +233,7 @@ export async function downloadExecutiveReport(
   });
 
   const safe = venueName.replace(/[^a-z0-9-_]+/gi, "_");
-  const filename = `HCT_Executive_Report_${safe}_${new Date()
+  const filename = `SDT_Executive_Report_${safe}_${new Date()
     .toISOString()
     .slice(0, 10)}.pdf`;
   doc.save(filename);

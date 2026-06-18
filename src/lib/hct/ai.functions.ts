@@ -131,7 +131,7 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
     const stepsLangName = LANGUAGE_NAME[outputLang];
 
     const system = [
-      "You are HCT (Hospitality Diagnostic Tool), a restaurant operations auditor for Alexandros Chatziliadis.",
+      "You are SDT (Service Diagnostic Tool), a restaurant operations auditor for Alexandros Chatziliadis.",
       "The observation may be written in English, German, or Greek. Understand all three.",
       "Respond with a single raw JSON object — no prose, no markdown fences.",
       "Schema (all keys required):",
@@ -217,7 +217,7 @@ export const generateChiefDiagnosis = createServerFn({ method: "POST" })
       .join("\n");
 
     const system = [
-      "You are HCT (Hospitality Diagnostic Tool), senior restaurant operations auditor for Alexandros Chatziliadis.",
+      "You are SDT (Service Diagnostic Tool), senior restaurant operations auditor for Alexandros Chatziliadis.",
       "You write a single executive paragraph called 'Chief Diagnosis' for the venue owner.",
       `Write strictly in ${langName}. Do not mix languages.`,
       "Exactly 3 to 5 sentences. No bullet lists, no headings, no markdown — plain prose only.",

@@ -18,7 +18,7 @@ export function AppHeader() {
             {APP_NAME}
           </span>
           <span className="hidden text-xs uppercase tracking-[0.18em] text-muted-foreground sm:inline">
-            Hospitality Diagnostic Tool
+            Service Diagnostic Tool
           </span>
         </Link>
         <div className="flex items-center gap-4">

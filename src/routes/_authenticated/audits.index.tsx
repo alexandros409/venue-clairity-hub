@@ -32,7 +32,7 @@ const search = z.object({ venue: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/audits/")({
   validateSearch: zodValidator(search),
-  head: () => ({ meta: [{ title: "All Audits — HCT" }] }),
+  head: () => ({ meta: [{ title: "All Audits — SDT" }] }),
   component: AuditsList,
 });
 

@@ -26,7 +26,7 @@ const search = z.object({ venue: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   validateSearch: zodValidator(search),
-  head: () => ({ meta: [{ title: "Dashboard — HCT" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — SDT" }] }),
   component: Dashboard,
   errorComponent: ({ error, reset }) => (
     <div className="mx-auto max-w-md px-6 py-24 text-center">

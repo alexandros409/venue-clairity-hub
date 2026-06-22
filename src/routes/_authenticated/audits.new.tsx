@@ -26,7 +26,6 @@ import {
   formatEUR,
   isVenueProfileComplete,
   lossForCategory,
-  labelOf as _labelOf,
 } from "@/lib/hct/constants";
 import { Sparkles, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";

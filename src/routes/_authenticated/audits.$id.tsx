@@ -14,13 +14,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getAudit, updateAudit } from "@/lib/hct/audits.functions";
+import { listVenues } from "@/lib/hct/venues.functions";
 import {
   PROBLEM_CATEGORIES,
   BSPS_SOLUTIONS,
   DIAGNOSIS_TYPES,
   SHIFTS,
+  formatEUR,
+  isVenueProfileComplete,
+  lossForCategory,
 } from "@/lib/hct/constants";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/audits/$id")({

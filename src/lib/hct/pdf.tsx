@@ -4,6 +4,8 @@ import autoTable from "jspdf-autotable";
 import {
   CONSULTANT_NAME,
   PROBLEM_CATEGORIES,
+  FOH_IMPACT_DISCLAIMER,
+  isFohImpactCategory,
   DIAGNOSIS_TYPES,
   BSPS_SOLUTIONS,
   SHIFTS,

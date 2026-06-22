@@ -254,13 +254,12 @@ function AuditDetail() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Estimated Loss (EUR / shift)">
-                  <Input
-                    inputMode="numeric"
-                    value={form.estimated_loss_eur}
-                    onChange={(e) => patch("estimated_loss_eur", e.target.value)}
-                    className="tabular h-11 rounded-sm border-hairline"
-                  />
+                <Field label="Computed Loss (€ / incident)">
+                  <div className="tabular flex h-11 items-center rounded-sm border border-hairline bg-muted/40 px-3 text-sm font-medium">
+                    {profileOk && form.problem_category
+                      ? formatEUR(Math.round(computedLoss))
+                      : "—"}
+                  </div>
                 </Field>
                 <Field label="BSPS Solution">
                   <Select

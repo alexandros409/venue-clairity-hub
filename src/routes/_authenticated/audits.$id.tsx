@@ -80,9 +80,28 @@ function AuditDetail() {
     setForm((f) => (f ? { ...f, [k]: v } : f));
   }
 
+  const activeVenue = (venuesQ.data ?? []).find((v) => v.id === form?.venue_id);
+  const venueProfile = activeVenue
+    ? {
+        concept_type: activeVenue.concept_type ?? null,
+        tables: activeVenue.tables ?? null,
+        avg_covers_per_table:
+          activeVenue.avg_covers_per_table != null ? Number(activeVenue.avg_covers_per_table) : null,
+        avg_check_per_person:
+          activeVenue.avg_check_per_person != null ? Number(activeVenue.avg_check_per_person) : null,
+        cycles_per_shift:
+          activeVenue.cycles_per_shift != null ? Number(activeVenue.cycles_per_shift) : null,
+      }
+    : null;
+  const profileOk = isVenueProfileComplete(venueProfile);
+  const computedLoss = profileOk && form?.problem_category
+    ? lossForCategory(form.problem_category, venueProfile)
+    : 0;
+
   const m = useMutation({
     mutationFn: () => {
       if (!form) throw new Error("Form not ready");
+      if (!profileOk) throw new Error("Complete the venue profile first.");
       return updateFn({
         data: {
           id,
@@ -91,7 +110,7 @@ function AuditDetail() {
           bottleneck: form.bottleneck,
           problem_category: form.problem_category,
           diagnosis_type: form.diagnosis_type as "structure" | "emotion" | "both",
-          estimated_loss_eur: Number(form.estimated_loss_eur || 0),
+          estimated_loss_eur: Math.round(computedLoss),
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
         },
@@ -108,6 +127,7 @@ function AuditDetail() {
 
   const canSubmit =
     !!form &&
+    profileOk &&
     form.bottleneck &&
     form.problem_category &&
     form.diagnosis_type &&

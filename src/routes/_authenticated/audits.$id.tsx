@@ -50,11 +50,13 @@ function AuditDetail() {
   const qc = useQueryClient();
   const getFn = useServerFn(getAudit);
   const updateFn = useServerFn(updateAudit);
+  const listVenuesFn = useServerFn(listVenues);
 
   const q = useQuery({
     queryKey: ["audit", id],
     queryFn: () => getFn({ data: { id } }),
   });
+  const venuesQ = useQuery({ queryKey: ["venues"], queryFn: () => listVenuesFn() });
 
   const [form, setForm] = useState<FormState | null>(null);
 

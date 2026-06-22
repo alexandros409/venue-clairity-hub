@@ -69,22 +69,37 @@ export type Database = {
       }
       venues: {
         Row: {
+          avg_check_per_person: number | null
+          avg_covers_per_table: number | null
+          concept_type: string | null
           created_at: string
+          cycles_per_shift: number | null
           id: string
           name: string
           owner_id: string
+          tables: number | null
         }
         Insert: {
+          avg_check_per_person?: number | null
+          avg_covers_per_table?: number | null
+          concept_type?: string | null
           created_at?: string
+          cycles_per_shift?: number | null
           id?: string
           name: string
           owner_id: string
+          tables?: number | null
         }
         Update: {
+          avg_check_per_person?: number | null
+          avg_covers_per_table?: number | null
+          concept_type?: string | null
           created_at?: string
+          cycles_per_shift?: number | null
           id?: string
           name?: string
           owner_id?: string
+          tables?: number | null
         }
         Relationships: []
       }

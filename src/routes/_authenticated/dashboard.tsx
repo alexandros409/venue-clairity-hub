@@ -13,13 +13,17 @@ import {
   PROBLEM_CATEGORIES,
   BSPS_SOLUTIONS,
   SHIFTS,
+  CONCEPT_TYPES,
   formatEUR,
   formatDate,
   labelOf,
+  venueEconomics,
+  applySafetyCap,
+  isVenueProfileComplete,
 } from "@/lib/hct/constants";
 import { downloadExecutiveReport } from "@/lib/hct/pdf";
 import { generateChiefDiagnosis } from "@/lib/hct/ai.functions";
-import { FileDown, Plus } from "lucide-react";
+import { FileDown, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const search = z.object({ venue: z.string().optional() });
@@ -70,30 +74,59 @@ function Dashboard() {
 
   const audits = auditsQ.data ?? [];
 
+  const venueProfile = activeVenue
+    ? {
+        concept_type: activeVenue.concept_type ?? null,
+        tables: activeVenue.tables ?? null,
+        avg_covers_per_table:
+          activeVenue.avg_covers_per_table != null ? Number(activeVenue.avg_covers_per_table) : null,
+        avg_check_per_person:
+          activeVenue.avg_check_per_person != null ? Number(activeVenue.avg_check_per_person) : null,
+        cycles_per_shift:
+          activeVenue.cycles_per_shift != null ? Number(activeVenue.cycles_per_shift) : null,
+      }
+    : null;
+  const profileOk = isVenueProfileComplete(venueProfile);
+  const economics = venueEconomics(venueProfile);
+
+  const capped = useMemo(
+    () =>
+      applySafetyCap(
+        audits.map((a) => Number(a.estimated_loss_eur || 0)),
+        venueProfile,
+      ),
+    [audits, venueProfile],
+  );
+
+  const cappedAudits = useMemo(
+    () =>
+      audits.map((a, i) => ({
+        ...a,
+        capped_loss_eur: Math.round(capped.capped[i] ?? Number(a.estimated_loss_eur || 0)),
+      })),
+    [audits, capped],
+  );
+
   const totals = useMemo(() => {
-    const total = audits.reduce(
-      (a, b) => a + Number(b.estimated_loss_eur || 0),
-      0,
-    );
     const struct = audits.filter((a) => a.diagnosis_type !== "emotion").length;
     const emo = audits.filter((a) => a.diagnosis_type !== "structure").length;
     const denom = struct + emo || 1;
     return {
       count: audits.length,
-      total,
+      total: Math.round(capped.capped_total),
+      raw_total: Math.round(capped.total),
+      capped: capped.capped_total < capped.total,
       structPct: Math.round((struct / denom) * 100),
       emoPct: Math.round((emo / denom) * 100),
     };
-  }, [audits]);
+  }, [audits, capped]);
 
   const topCritical = useMemo(
     () =>
-      [...audits]
-        .sort(
-          (a, b) => Number(b.estimated_loss_eur) - Number(a.estimated_loss_eur),
-        )
+      [...cappedAudits]
+        .sort((a, b) => b.capped_loss_eur - a.capped_loss_eur)
         .slice(0, 5),
-    [audits],
+    [cappedAudits],
   );
 
   const [exporting, setExporting] = useState(false);
@@ -125,7 +158,15 @@ function Dashboard() {
         );
         console.error(e);
       }
-      await downloadExecutiveReport(activeVenue.name, audits, chiefDiagnosis);
+      await downloadExecutiveReport(
+        activeVenue.name,
+        cappedAudits.map((a) => ({
+          ...a,
+          estimated_loss_eur: a.capped_loss_eur,
+        })),
+        chiefDiagnosis,
+        economics,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");
     } finally {
@@ -170,6 +211,42 @@ function Dashboard() {
           )
         ) : (
           <>
+            {!profileOk && (
+              <div className="mt-8 flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <div className="font-medium">Venue profile incomplete.</div>
+                  <div className="mt-1 text-destructive/80">
+                    Open <strong>Setup Profile</strong> next to the venue selector and fill in concept, tables, covers, average check and cycles. Observations cannot be saved until this is done, and financial loss cannot be calculated.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {profileOk && economics && (
+              <section className="mt-8 rounded-sm border border-hairline bg-card p-5">
+                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Venue Economics —{" "}
+                  {labelOf(CONCEPT_TYPES, activeVenue!.concept_type ?? "")}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <Stat label="Covers / Shift" value={String(economics.covers)} />
+                  <Stat
+                    label="Revenue Ceiling"
+                    value={formatEUR(Math.round(economics.revenue_ceiling))}
+                  />
+                  <Stat
+                    label="Max Loss (40 %)"
+                    value={formatEUR(Math.round(economics.max_total_loss))}
+                  />
+                  <Stat
+                    label="Avg Check / Person"
+                    value={formatEUR(Number(activeVenue!.avg_check_per_person ?? 0))}
+                  />
+                </div>
+              </section>
+            )}
+
             <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
               <KpiCard label="Total Bottlenecks">
                 <span className="tabular text-4xl font-medium">{totals.count}</span>
@@ -178,6 +255,11 @@ function Dashboard() {
                 <span className="tabular text-4xl font-medium">
                   {formatEUR(totals.total)}
                 </span>
+                {totals.capped && (
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-gold">
+                    Capped at 40 % of ceiling (raw {formatEUR(totals.raw_total)})
+                  </div>
+                )}
               </KpiCard>
               <KpiCard label="Structural · Emotional">
                 <div className="mt-1 flex items-end gap-3">
@@ -247,7 +329,7 @@ function Dashboard() {
                             </Link>
                           </td>
                           <td className="tabular px-4 py-3 text-right font-medium">
-                            {formatEUR(Number(a.estimated_loss_eur))}
+                            {formatEUR(a.capped_loss_eur)}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <span className="inline-flex items-center rounded-sm border border-gold/40 bg-gold/10 px-2 py-0.5 font-mono text-[10px] text-foreground">
@@ -317,6 +399,17 @@ function EmptyState({ title, body }: { title: string; body: string }) {
       <p className="mx-auto mt-4 max-w-md text-sm text-muted-foreground">
         {body}
       </p>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="tabular mt-1 text-lg font-medium">{value}</div>
     </div>
   );
 }

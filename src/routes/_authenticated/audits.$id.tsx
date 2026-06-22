@@ -14,13 +14,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getAudit, updateAudit } from "@/lib/hct/audits.functions";
+import { listVenues } from "@/lib/hct/venues.functions";
 import {
   PROBLEM_CATEGORIES,
   BSPS_SOLUTIONS,
   DIAGNOSIS_TYPES,
   SHIFTS,
+  formatEUR,
+  isVenueProfileComplete,
+  lossForCategory,
 } from "@/lib/hct/constants";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/audits/$id")({
@@ -46,11 +50,13 @@ function AuditDetail() {
   const qc = useQueryClient();
   const getFn = useServerFn(getAudit);
   const updateFn = useServerFn(updateAudit);
+  const listVenuesFn = useServerFn(listVenues);
 
   const q = useQuery({
     queryKey: ["audit", id],
     queryFn: () => getFn({ data: { id } }),
   });
+  const venuesQ = useQuery({ queryKey: ["venues"], queryFn: () => listVenuesFn() });
 
   const [form, setForm] = useState<FormState | null>(null);
 
@@ -74,9 +80,28 @@ function AuditDetail() {
     setForm((f) => (f ? { ...f, [k]: v } : f));
   }
 
+  const activeVenue = (venuesQ.data ?? []).find((v) => v.id === form?.venue_id);
+  const venueProfile = activeVenue
+    ? {
+        concept_type: activeVenue.concept_type ?? null,
+        tables: activeVenue.tables ?? null,
+        avg_covers_per_table:
+          activeVenue.avg_covers_per_table != null ? Number(activeVenue.avg_covers_per_table) : null,
+        avg_check_per_person:
+          activeVenue.avg_check_per_person != null ? Number(activeVenue.avg_check_per_person) : null,
+        cycles_per_shift:
+          activeVenue.cycles_per_shift != null ? Number(activeVenue.cycles_per_shift) : null,
+      }
+    : null;
+  const profileOk = isVenueProfileComplete(venueProfile);
+  const computedLoss = profileOk && form?.problem_category
+    ? lossForCategory(form.problem_category, venueProfile)
+    : 0;
+
   const m = useMutation({
     mutationFn: () => {
       if (!form) throw new Error("Form not ready");
+      if (!profileOk) throw new Error("Complete the venue profile first.");
       return updateFn({
         data: {
           id,
@@ -85,7 +110,7 @@ function AuditDetail() {
           bottleneck: form.bottleneck,
           problem_category: form.problem_category,
           diagnosis_type: form.diagnosis_type as "structure" | "emotion" | "both",
-          estimated_loss_eur: Number(form.estimated_loss_eur || 0),
+          estimated_loss_eur: Math.round(computedLoss),
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
         },
@@ -102,6 +127,7 @@ function AuditDetail() {
 
   const canSubmit =
     !!form &&
+    profileOk &&
     form.bottleneck &&
     form.problem_category &&
     form.diagnosis_type &&
@@ -140,6 +166,19 @@ function AuditDetail() {
             <h1 className="mt-2 text-3xl font-medium tracking-tight">
               Audit Entry
             </h1>
+
+            {!profileOk && (
+              <div className="mt-6 flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <div className="font-medium">Venue profile incomplete.</div>
+                  <div className="mt-1 text-destructive/80">
+                    Open the venue from the console and fill the Setup Profile (concept, tables, covers, check, cycles) before saving changes.
+                  </div>
+                </div>
+              </div>
+            )}
+
 
             <form
               onSubmit={(e) => {
@@ -228,13 +267,12 @@ function AuditDetail() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Estimated Loss (EUR / shift)">
-                  <Input
-                    inputMode="numeric"
-                    value={form.estimated_loss_eur}
-                    onChange={(e) => patch("estimated_loss_eur", e.target.value)}
-                    className="tabular h-11 rounded-sm border-hairline"
-                  />
+                <Field label="Computed Loss (€ / incident)">
+                  <div className="tabular flex h-11 items-center rounded-sm border border-hairline bg-muted/40 px-3 text-sm font-medium">
+                    {profileOk && form.problem_category
+                      ? formatEUR(Math.round(computedLoss))
+                      : "—"}
+                  </div>
                 </Field>
                 <Field label="BSPS Solution">
                   <Select

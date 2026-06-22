@@ -23,8 +23,11 @@ import {
   PROBLEM_CATEGORIES,
   DIAGNOSIS_TYPES,
   BSPS_SOLUTIONS,
+  formatEUR,
+  isVenueProfileComplete,
+  lossForCategory,
 } from "@/lib/hct/constants";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const search = z.object({ venue: fallback(z.string().optional(), undefined) });
@@ -58,6 +61,24 @@ function NewAudit() {
   });
   const [analyzing, setAnalyzing] = useState(false);
 
+  const activeVenue = venues.find((v) => v.id === form.venue_id);
+  const venueProfile = activeVenue
+    ? {
+        concept_type: activeVenue.concept_type ?? null,
+        tables: activeVenue.tables ?? null,
+        avg_covers_per_table:
+          activeVenue.avg_covers_per_table != null ? Number(activeVenue.avg_covers_per_table) : null,
+        avg_check_per_person:
+          activeVenue.avg_check_per_person != null ? Number(activeVenue.avg_check_per_person) : null,
+        cycles_per_shift:
+          activeVenue.cycles_per_shift != null ? Number(activeVenue.cycles_per_shift) : null,
+      }
+    : null;
+  const profileOk = isVenueProfileComplete(venueProfile);
+  const computedLoss = profileOk && form.problem_category
+    ? lossForCategory(form.problem_category, venueProfile)
+    : 0;
+
   function patch<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
@@ -75,7 +96,6 @@ function NewAudit() {
         problem_category: r.problem_category,
         diagnosis_type: r.diagnosis_type,
         bsps_solution: r.bsps_solution,
-        estimated_loss_eur: f.estimated_loss_eur || r.estimated_loss_eur,
         actionable_steps: r.actionable_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"),
       }));
       toast.success("AI diagnosis ready — review and edit before saving.");
@@ -87,8 +107,9 @@ function NewAudit() {
   }
 
   const m = useMutation({
-    mutationFn: () =>
-      createFn({
+    mutationFn: () => {
+      if (!profileOk) throw new Error("Complete the venue profile first.");
+      return createFn({
         data: {
           venue_id: form.venue_id,
           audit_date: form.audit_date,
@@ -96,11 +117,12 @@ function NewAudit() {
           bottleneck: form.bottleneck,
           problem_category: form.problem_category,
           diagnosis_type: form.diagnosis_type as "structure" | "emotion" | "both",
-          estimated_loss_eur: Number(form.estimated_loss_eur || 0),
+          estimated_loss_eur: Math.round(computedLoss),
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Audit entry saved.");
       navigate({
@@ -114,6 +136,7 @@ function NewAudit() {
 
   const canSubmit =
     form.venue_id &&
+    profileOk &&
     form.bottleneck &&
     form.problem_category &&
     form.diagnosis_type &&
@@ -159,6 +182,19 @@ function NewAudit() {
               </SelectContent>
             </Select>
           </Field>
+
+          {form.venue_id && !profileOk && (
+            <div className="flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <div className="font-medium">Venue profile incomplete.</div>
+                <div className="mt-1 text-destructive/80">
+                  Open the venue profile from the console (Setup Profile button) and fill in concept, tables, covers, average check and cycles before saving observations.
+                </div>
+              </div>
+            </div>
+          )}
+
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="Audit Date">
@@ -251,14 +287,15 @@ function NewAudit() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Estimated Loss (EUR / shift)">
-              <Input
-                inputMode="numeric"
-                value={form.estimated_loss_eur}
-                onChange={(e) => patch("estimated_loss_eur", e.target.value)}
-                placeholder="0"
-                className="tabular h-11 rounded-sm border-hairline"
-              />
+            <Field label="Computed Loss (€ / incident)">
+              <div className="tabular flex h-11 items-center rounded-sm border border-hairline bg-muted/40 px-3 text-sm font-medium">
+                {profileOk && form.problem_category
+                  ? formatEUR(Math.round(computedLoss))
+                  : "—"}
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Auto-calculated from venue profile + category. A 40 % safety cap is applied on the dashboard total.
+              </p>
             </Field>
             <Field label="BSPS Solution">
               <Select

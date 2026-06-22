@@ -135,7 +135,10 @@ export async function downloadExecutiveReport(
     doc.setFont(FONT_FAMILY, "normal");
     doc.setFontSize(9);
     doc.setTextColor(13, 27, 42);
-    const line = `Covers / shift: ${economics.covers}   ·   Revenue ceiling: ${formatEUR(Math.round(economics.revenue_ceiling))}   ·   Max loss (40 %): ${formatEUR(Math.round(economics.max_total_loss))}`;
+    const capPct = economics.revenue_ceiling > 0
+      ? Math.round((economics.max_total_loss / economics.revenue_ceiling) * 100)
+      : 0;
+    const line = `Covers / shift: ${economics.covers}   ·   Revenue ceiling: ${formatEUR(Math.round(economics.revenue_ceiling))}   ·   Max loss (${capPct} %): ${formatEUR(Math.round(economics.max_total_loss))}`;
     doc.text(line, margin, y);
     y += 18;
   } else {

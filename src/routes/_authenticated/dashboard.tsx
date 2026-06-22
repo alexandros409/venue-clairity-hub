@@ -236,7 +236,13 @@ function Dashboard() {
                     value={formatEUR(Math.round(economics.revenue_ceiling))}
                   />
                   <Stat
-                    label="Max Loss (40 %)"
+                    label={`Max Loss (${
+                      economics.revenue_ceiling > 0
+                        ? Math.round(
+                            (economics.max_total_loss / economics.revenue_ceiling) * 100,
+                          )
+                        : 0
+                    } %)`}
                     value={formatEUR(Math.round(economics.max_total_loss))}
                   />
                   <Stat
@@ -257,7 +263,7 @@ function Dashboard() {
                 </span>
                 {totals.capped && (
                   <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-gold">
-                    Capped at 40 % of ceiling (raw {formatEUR(totals.raw_total)})
+                    Capped at {economics ? Math.round((economics.max_total_loss / economics.revenue_ceiling) * 100) : 0} % of ceiling (raw {formatEUR(totals.raw_total)})
                   </div>
                 )}
               </KpiCard>

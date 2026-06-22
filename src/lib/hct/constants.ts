@@ -92,6 +92,20 @@ export function isVenueProfileComplete(p: VenueProfile | null | undefined): bool
   );
 }
 
+// Concept-specific safety-cap ratios (share of revenue_ceiling)
+export const CONCEPT_CAP_RATIO: Record<string, number> = {
+  bar_canal: 0.3,
+  casual_dining: 0.25,
+  fine_dining: 0.2,
+  hotel_restaurant: 0.22,
+};
+export const DEFAULT_CAP_RATIO = 0.25;
+
+export function capRatioForConcept(concept_type: string | null | undefined): number {
+  if (!concept_type) return DEFAULT_CAP_RATIO;
+  return CONCEPT_CAP_RATIO[concept_type] ?? DEFAULT_CAP_RATIO;
+}
+
 export function venueEconomics(p: VenueProfile | null | undefined): VenueEconomics | null {
   if (!isVenueProfileComplete(p)) return null;
   const tables = Number(p!.tables);
@@ -100,10 +114,11 @@ export function venueEconomics(p: VenueProfile | null | undefined): VenueEconomi
   const cycles = Number(p!.cycles_per_shift);
   const covers = tables * cpt;
   const revenue_ceiling = covers * check * cycles;
+  const ratio = capRatioForConcept(p!.concept_type);
   return {
     covers,
     revenue_ceiling,
-    max_total_loss: revenue_ceiling * 0.4,
+    max_total_loss: revenue_ceiling * ratio,
   };
 }
 

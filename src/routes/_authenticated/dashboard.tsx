@@ -211,6 +211,42 @@ function Dashboard() {
           )
         ) : (
           <>
+            {!profileOk && (
+              <div className="mt-8 flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <div className="font-medium">Venue profile incomplete.</div>
+                  <div className="mt-1 text-destructive/80">
+                    Open <strong>Setup Profile</strong> next to the venue selector and fill in concept, tables, covers, average check and cycles. Observations cannot be saved until this is done, and financial loss cannot be calculated.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {profileOk && economics && (
+              <section className="mt-8 rounded-sm border border-hairline bg-card p-5">
+                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Venue Economics —{" "}
+                  {labelOf(CONCEPT_TYPES, activeVenue!.concept_type ?? "")}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <Stat label="Covers / Shift" value={String(economics.covers)} />
+                  <Stat
+                    label="Revenue Ceiling"
+                    value={formatEUR(Math.round(economics.revenue_ceiling))}
+                  />
+                  <Stat
+                    label="Max Loss (40 %)"
+                    value={formatEUR(Math.round(economics.max_total_loss))}
+                  />
+                  <Stat
+                    label="Avg Check / Person"
+                    value={formatEUR(Number(activeVenue!.avg_check_per_person ?? 0))}
+                  />
+                </div>
+              </section>
+            )}
+
             <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
               <KpiCard label="Total Bottlenecks">
                 <span className="tabular text-4xl font-medium">{totals.count}</span>
@@ -219,6 +255,11 @@ function Dashboard() {
                 <span className="tabular text-4xl font-medium">
                   {formatEUR(totals.total)}
                 </span>
+                {totals.capped && (
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-gold">
+                    Capped at 40 % of ceiling (raw {formatEUR(totals.raw_total)})
+                  </div>
+                )}
               </KpiCard>
               <KpiCard label="Structural · Emotional">
                 <div className="mt-1 flex items-end gap-3">

@@ -23,8 +23,12 @@ import {
   PROBLEM_CATEGORIES,
   DIAGNOSIS_TYPES,
   BSPS_SOLUTIONS,
+  formatEUR,
+  isVenueProfileComplete,
+  lossForCategory,
+  labelOf,
 } from "@/lib/hct/constants";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const search = z.object({ venue: fallback(z.string().optional(), undefined) });

@@ -40,6 +40,7 @@ export async function downloadExecutiveReport(
   venueName: string,
   audits: Audit[],
   chiefDiagnosis?: string,
+  economics?: { covers: number; revenue_ceiling: number; max_total_loss: number } | null,
 ) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   registerUnicodeFonts(doc);

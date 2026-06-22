@@ -62,6 +62,24 @@ function NewAudit() {
   });
   const [analyzing, setAnalyzing] = useState(false);
 
+  const activeVenue = venues.find((v) => v.id === form.venue_id);
+  const venueProfile = activeVenue
+    ? {
+        concept_type: activeVenue.concept_type ?? null,
+        tables: activeVenue.tables ?? null,
+        avg_covers_per_table:
+          activeVenue.avg_covers_per_table != null ? Number(activeVenue.avg_covers_per_table) : null,
+        avg_check_per_person:
+          activeVenue.avg_check_per_person != null ? Number(activeVenue.avg_check_per_person) : null,
+        cycles_per_shift:
+          activeVenue.cycles_per_shift != null ? Number(activeVenue.cycles_per_shift) : null,
+      }
+    : null;
+  const profileOk = isVenueProfileComplete(venueProfile);
+  const computedLoss = profileOk && form.problem_category
+    ? lossForCategory(form.problem_category, venueProfile)
+    : 0;
+
   function patch<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
@@ -79,7 +97,6 @@ function NewAudit() {
         problem_category: r.problem_category,
         diagnosis_type: r.diagnosis_type,
         bsps_solution: r.bsps_solution,
-        estimated_loss_eur: f.estimated_loss_eur || r.estimated_loss_eur,
         actionable_steps: r.actionable_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"),
       }));
       toast.success("AI diagnosis ready — review and edit before saving.");
@@ -91,8 +108,9 @@ function NewAudit() {
   }
 
   const m = useMutation({
-    mutationFn: () =>
-      createFn({
+    mutationFn: () => {
+      if (!profileOk) throw new Error("Complete the venue profile first.");
+      return createFn({
         data: {
           venue_id: form.venue_id,
           audit_date: form.audit_date,
@@ -100,11 +118,12 @@ function NewAudit() {
           bottleneck: form.bottleneck,
           problem_category: form.problem_category,
           diagnosis_type: form.diagnosis_type as "structure" | "emotion" | "both",
-          estimated_loss_eur: Number(form.estimated_loss_eur || 0),
+          estimated_loss_eur: Math.round(computedLoss),
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Audit entry saved.");
       navigate({
@@ -118,6 +137,7 @@ function NewAudit() {
 
   const canSubmit =
     form.venue_id &&
+    profileOk &&
     form.bottleneck &&
     form.problem_category &&
     form.diagnosis_type &&

@@ -122,7 +122,23 @@ export async function downloadExecutiveReport(
     doc.setFont(FONT_FAMILY, "bold");
     doc.text(k.value, x + 10, y + 44);
   });
-  y += kpiH + 24;
+  y += kpiH + 16;
+
+  if (economics) {
+    doc.setFont(FONT_FAMILY, "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(140);
+    doc.text("VENUE ECONOMICS", margin, y);
+    y += 12;
+    doc.setFont(FONT_FAMILY, "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(13, 27, 42);
+    const line = `Covers / shift: ${economics.covers}   ·   Revenue ceiling: ${formatEUR(Math.round(economics.revenue_ceiling))}   ·   Max loss (40 %): ${formatEUR(Math.round(economics.max_total_loss))}`;
+    doc.text(line, margin, y);
+    y += 18;
+  } else {
+    y += 8;
+  }
 
   // Chief Diagnosis (AI-generated narrative)
   if (chiefDiagnosis && chiefDiagnosis.trim()) {

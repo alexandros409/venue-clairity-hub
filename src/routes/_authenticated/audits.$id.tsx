@@ -167,6 +167,19 @@ function AuditDetail() {
               Audit Entry
             </h1>
 
+            {!profileOk && (
+              <div className="mt-6 flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <div className="font-medium">Venue profile incomplete.</div>
+                  <div className="mt-1 text-destructive/80">
+                    Open the venue from the console and fill the Setup Profile (concept, tables, covers, check, cycles) before saving changes.
+                  </div>
+                </div>
+              </div>
+            )}
+
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();

@@ -329,7 +329,7 @@ function Dashboard() {
                             </Link>
                           </td>
                           <td className="tabular px-4 py-3 text-right font-medium">
-                            {formatEUR(Number(a.estimated_loss_eur))}
+                            {formatEUR(a.capped_loss_eur)}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <span className="inline-flex items-center rounded-sm border border-gold/40 bg-gold/10 px-2 py-0.5 font-mono text-[10px] text-foreground">

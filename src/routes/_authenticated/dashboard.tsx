@@ -402,3 +402,14 @@ function EmptyState({ title, body }: { title: string; body: string }) {
     </div>
   );
 }
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="tabular mt-1 text-lg font-medium">{value}</div>
+    </div>
+  );
+}

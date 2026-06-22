@@ -189,7 +189,8 @@ export async function downloadExecutiveReport(
   const rows = audits.map((a) => [
     formatDate(a.audit_date),
     labelOf(SHIFTS, a.shift || "") || "—",
-    labelOf(PROBLEM_CATEGORIES, a.problem_category || "") || "—",
+    (labelOf(PROBLEM_CATEGORIES, a.problem_category || "") || "—") +
+      (isFohImpactCategory(a.problem_category) ? `\n${FOH_IMPACT_DISCLAIMER}` : ""),
     labelOf(DIAGNOSIS_TYPES, a.diagnosis_type || "") || "—",
     formatEUR(Number(a.estimated_loss_eur ?? 0)),
     (labelOf(BSPS_SOLUTIONS, a.bsps_solution || "") || "").split(" — ")[0] || "—",

@@ -13,13 +13,17 @@ import {
   PROBLEM_CATEGORIES,
   BSPS_SOLUTIONS,
   SHIFTS,
+  CONCEPT_TYPES,
   formatEUR,
   formatDate,
   labelOf,
+  venueEconomics,
+  applySafetyCap,
+  isVenueProfileComplete,
 } from "@/lib/hct/constants";
 import { downloadExecutiveReport } from "@/lib/hct/pdf";
 import { generateChiefDiagnosis } from "@/lib/hct/ai.functions";
-import { FileDown, Plus } from "lucide-react";
+import { FileDown, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const search = z.object({ venue: z.string().optional() });

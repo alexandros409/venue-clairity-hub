@@ -274,6 +274,14 @@ function AuditDetail() {
                 </Field>
               </div>
 
+              {isFohImpactCategory(form.problem_category) && (
+                <div className="flex items-start gap-2 rounded-sm border border-gold/40 bg-gold/10 px-3 py-2 text-[11px] leading-snug text-foreground">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" />
+                  <span>{FOH_IMPACT_DISCLAIMER}</span>
+                </div>
+              )}
+
+
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Computed Loss (€ / incident)">
                   <div className="tabular flex h-11 items-center rounded-sm border border-hairline bg-muted/40 px-3 text-sm font-medium">

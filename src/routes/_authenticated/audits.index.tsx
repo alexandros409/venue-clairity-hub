@@ -142,6 +142,11 @@ function AuditsList() {
                       {labelOf(BSPS_SOLUTIONS, a.bsps_solution).split(" — ")[0]}
                     </span>
                   </div>
+                  {isFohImpactCategory(a.problem_category) && (
+                    <div className="text-[10px] leading-snug text-gold">
+                      {FOH_IMPACT_DISCLAIMER}
+                    </div>
+                  )}
                 </Link>
                 <button
                   type="button"

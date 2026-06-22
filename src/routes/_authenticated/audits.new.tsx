@@ -21,6 +21,9 @@ import { analyzeBottleneck } from "@/lib/hct/ai.functions";
 import {
   SHIFTS,
   PROBLEM_CATEGORIES,
+  PROBLEM_CATEGORY_DESCRIPTIONS,
+  FOH_IMPACT_DISCLAIMER,
+  isFohImpactCategory,
   DIAGNOSIS_TYPES,
   BSPS_SOLUTIONS,
   formatEUR,
@@ -264,6 +267,11 @@ function NewAudit() {
                   ))}
                 </SelectContent>
               </Select>
+              {PROBLEM_CATEGORY_DESCRIPTIONS[form.problem_category] && (
+                <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+                  {PROBLEM_CATEGORY_DESCRIPTIONS[form.problem_category]}
+                </p>
+              )}
             </Field>
             <Field label="Diagnosis Type">
               <Select
@@ -285,6 +293,14 @@ function NewAudit() {
               </Select>
             </Field>
           </div>
+
+          {isFohImpactCategory(form.problem_category) && (
+            <div className="flex items-start gap-2 rounded-sm border border-gold/40 bg-gold/10 px-3 py-2 text-[11px] leading-snug text-foreground">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" />
+              <span>{FOH_IMPACT_DISCLAIMER}</span>
+            </div>
+          )}
+
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="Computed Loss (€ / incident)">

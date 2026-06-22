@@ -8,12 +8,23 @@ export const SHIFTS = [
 ] as const;
 
 export const PROBLEM_CATEGORIES = [
-  { value: "kitchen_pass", label: "Kitchen & Pass Coordination" },
+  { value: "kitchen_pass", label: "Pass & Flow Impact" },
   { value: "billing_checkout", label: "Billing & Checkout" },
   { value: "service_flow", label: "Service Flow" },
   { value: "staff_fatigue", label: "Staff Fatigue & Morale" },
   { value: "leadership_boundaries", label: "Leadership & Boundaries" },
 ] as const;
+
+export const PROBLEM_CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  kitchen_pass:
+    "How delays or errors at the pass directly impact FOH service quality and guest experience. This observation is strictly FOH-scoped: it evaluates how the server manages the wait, communicates with the guest, and recovers the experience — not kitchen operations.",
+};
+
+export const FOH_IMPACT_DISCLAIMER =
+  "FOH Impact Only — This observation reflects floor-level consequences, not kitchen management.";
+
+export const isFohImpactCategory = (value?: string | null) =>
+  value === "kitchen_pass";
 
 export const DIAGNOSIS_TYPES = [
   { value: "structure", label: "Structural" },

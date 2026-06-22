@@ -21,6 +21,9 @@ import { analyzeBottleneck } from "@/lib/hct/ai.functions";
 import {
   SHIFTS,
   PROBLEM_CATEGORIES,
+  PROBLEM_CATEGORY_DESCRIPTIONS,
+  FOH_IMPACT_DISCLAIMER,
+  isFohImpactCategory,
   DIAGNOSIS_TYPES,
   BSPS_SOLUTIONS,
   formatEUR,

@@ -244,6 +244,11 @@ function AuditDetail() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {PROBLEM_CATEGORY_DESCRIPTIONS[form.problem_category] && (
+                    <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+                      {PROBLEM_CATEGORY_DESCRIPTIONS[form.problem_category]}
+                    </p>
+                  )}
                 </Field>
                 <Field label="Diagnosis Type">
                   <Select

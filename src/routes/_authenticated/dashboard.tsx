@@ -74,30 +74,59 @@ function Dashboard() {
 
   const audits = auditsQ.data ?? [];
 
+  const venueProfile = activeVenue
+    ? {
+        concept_type: activeVenue.concept_type ?? null,
+        tables: activeVenue.tables ?? null,
+        avg_covers_per_table:
+          activeVenue.avg_covers_per_table != null ? Number(activeVenue.avg_covers_per_table) : null,
+        avg_check_per_person:
+          activeVenue.avg_check_per_person != null ? Number(activeVenue.avg_check_per_person) : null,
+        cycles_per_shift:
+          activeVenue.cycles_per_shift != null ? Number(activeVenue.cycles_per_shift) : null,
+      }
+    : null;
+  const profileOk = isVenueProfileComplete(venueProfile);
+  const economics = venueEconomics(venueProfile);
+
+  const capped = useMemo(
+    () =>
+      applySafetyCap(
+        audits.map((a) => Number(a.estimated_loss_eur || 0)),
+        venueProfile,
+      ),
+    [audits, venueProfile],
+  );
+
+  const cappedAudits = useMemo(
+    () =>
+      audits.map((a, i) => ({
+        ...a,
+        capped_loss_eur: Math.round(capped.capped[i] ?? Number(a.estimated_loss_eur || 0)),
+      })),
+    [audits, capped],
+  );
+
   const totals = useMemo(() => {
-    const total = audits.reduce(
-      (a, b) => a + Number(b.estimated_loss_eur || 0),
-      0,
-    );
     const struct = audits.filter((a) => a.diagnosis_type !== "emotion").length;
     const emo = audits.filter((a) => a.diagnosis_type !== "structure").length;
     const denom = struct + emo || 1;
     return {
       count: audits.length,
-      total,
+      total: Math.round(capped.capped_total),
+      raw_total: Math.round(capped.total),
+      capped: capped.capped_total < capped.total,
       structPct: Math.round((struct / denom) * 100),
       emoPct: Math.round((emo / denom) * 100),
     };
-  }, [audits]);
+  }, [audits, capped]);
 
   const topCritical = useMemo(
     () =>
-      [...audits]
-        .sort(
-          (a, b) => Number(b.estimated_loss_eur) - Number(a.estimated_loss_eur),
-        )
+      [...cappedAudits]
+        .sort((a, b) => b.capped_loss_eur - a.capped_loss_eur)
         .slice(0, 5),
-    [audits],
+    [cappedAudits],
   );
 
   const [exporting, setExporting] = useState(false);

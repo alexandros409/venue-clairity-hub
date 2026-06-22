@@ -17,6 +17,9 @@ import { getAudit, updateAudit } from "@/lib/hct/audits.functions";
 import { listVenues } from "@/lib/hct/venues.functions";
 import {
   PROBLEM_CATEGORIES,
+  PROBLEM_CATEGORY_DESCRIPTIONS,
+  FOH_IMPACT_DISCLAIMER,
+  isFohImpactCategory,
   BSPS_SOLUTIONS,
   DIAGNOSIS_TYPES,
   SHIFTS,

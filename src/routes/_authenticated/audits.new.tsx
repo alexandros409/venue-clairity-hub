@@ -48,6 +48,7 @@ function NewAudit() {
 
   const venuesQ = useQuery({ queryKey: ["venues"], queryFn: () => listVenuesFn() });
   const venues = venuesQ.data ?? [];
+  const selectedVenue = venues.find((v) => v.id === (venue ?? ""));
 
   const [form, setForm] = useState({
     venue_id: venue ?? "",

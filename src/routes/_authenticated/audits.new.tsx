@@ -184,6 +184,19 @@ function NewAudit() {
             </Select>
           </Field>
 
+          {form.venue_id && !profileOk && (
+            <div className="flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <div className="font-medium">Venue profile incomplete.</div>
+                <div className="mt-1 text-destructive/80">
+                  Open the venue profile from the console (Setup Profile button) and fill in concept, tables, covers, average check and cycles before saving observations.
+                </div>
+              </div>
+            </div>
+          )}
+
+
           <div className="grid grid-cols-2 gap-4">
             <Field label="Audit Date">
               <Input

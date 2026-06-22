@@ -154,6 +154,16 @@ export function applySafetyCap(
     return { capped: rawLosses.slice(), total, capped_total: total, max_total_loss: max };
   }
   const k = max / total;
-  const capped = rawLosses.map((v) => (Number(v) || 0) * k);
-  return { capped, total, capped_total: max, max_total_loss: max };
+  const capped = rawLosses.map((v) => Math.floor((Number(v) || 0) * k));
+  let sum = capped.reduce((a, b) => a + b, 0);
+  // Correct any 1€ overshoot due to rounding by subtracting from the largest item(s)
+  while (sum > max) {
+    let maxIdx = 0;
+    for (let i = 1; i < capped.length; i++) {
+      if (capped[i] > capped[maxIdx]) maxIdx = i;
+    }
+    capped[maxIdx] -= 1;
+    sum -= 1;
+  }
+  return { capped, total, capped_total: sum, max_total_loss: max };
 }

@@ -158,7 +158,15 @@ function Dashboard() {
         );
         console.error(e);
       }
-      await downloadExecutiveReport(activeVenue.name, audits, chiefDiagnosis);
+      await downloadExecutiveReport(
+        activeVenue.name,
+        cappedAudits.map((a) => ({
+          ...a,
+          estimated_loss_eur: a.capped_loss_eur,
+        })),
+        chiefDiagnosis,
+        economics,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");
     } finally {

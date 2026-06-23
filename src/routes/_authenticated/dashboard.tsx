@@ -92,7 +92,11 @@ function Dashboard() {
   const capped = useMemo(
     () =>
       applySafetyCap(
-        audits.map((a) => Number(a.estimated_loss_eur || 0)),
+        audits.map((a) =>
+          (a as { is_positive?: boolean }).is_positive
+            ? 0
+            : Number(a.estimated_loss_eur || 0),
+        ),
         venueProfile,
       ),
     [audits, venueProfile],
@@ -100,10 +104,16 @@ function Dashboard() {
 
   const cappedAudits = useMemo(
     () =>
-      audits.map((a, i) => ({
-        ...a,
-        capped_loss_eur: Math.round(capped.capped[i] ?? Number(a.estimated_loss_eur || 0)),
-      })),
+      audits.map((a, i) => {
+        const positive = Boolean((a as { is_positive?: boolean }).is_positive);
+        return {
+          ...a,
+          is_positive: positive,
+          capped_loss_eur: positive
+            ? 0
+            : Math.round(capped.capped[i] ?? Number(a.estimated_loss_eur || 0)),
+        };
+      }),
     [audits, capped],
   );
 

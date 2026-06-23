@@ -9,7 +9,7 @@ export const listAudits = createServerFn({ method: "GET" })
     let q = context.supabase
       .from("audits")
       .select(
-        "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, bsps_solution, actionable_steps, created_at",
+        "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, bsps_solution, actionable_steps, created_at",
       )
       .order("audit_date", { ascending: false })
       .order("created_at", { ascending: false });

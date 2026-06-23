@@ -321,9 +321,11 @@ function AuditDetail() {
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Computed Loss (€ / incident)">
                   <div className="tabular flex h-11 items-center rounded-sm border border-hairline bg-muted/40 px-3 text-sm font-medium">
-                    {profileOk && form.problem_category
-                      ? formatEUR(Math.round(computedLoss))
-                      : "—"}
+                    {form.is_positive
+                      ? <span className="text-emerald-700">Positive Observation · €0</span>
+                      : profileOk && form.problem_category
+                        ? formatEUR(Math.round(computedLoss))
+                        : "—"}
                   </div>
                 </Field>
                 <Field label="BSPS Solution">

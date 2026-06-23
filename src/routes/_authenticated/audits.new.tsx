@@ -229,6 +229,38 @@ function NewAudit() {
               </Select>
             </Field>
           </div>
+          <Field label="Observation Type">
+            <div className="inline-flex rounded-sm border border-hairline overflow-hidden">
+              <button
+                type="button"
+                onClick={() => patch("is_positive", false)}
+                className={`px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                  !form.is_positive
+                    ? "bg-foreground text-background"
+                    : "bg-card text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Negative
+              </button>
+              <button
+                type="button"
+                onClick={() => patch("is_positive", true)}
+                className={`border-l border-hairline px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                  form.is_positive
+                    ? "bg-emerald-600 text-white"
+                    : "bg-card text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Positive
+              </button>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              {form.is_positive
+                ? "Positive observation — financial loss is fixed at €0 and excluded from the safety cap and Chief Diagnosis."
+                : "Negative observation — financial loss is auto-calculated from the category formula."}
+            </p>
+          </Field>
+
 
           <Field
             label="Bottleneck Observation"

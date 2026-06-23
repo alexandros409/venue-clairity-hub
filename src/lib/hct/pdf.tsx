@@ -33,6 +33,7 @@ type Audit = {
   problem_category: string;
   diagnosis_type: string;
   estimated_loss_eur: number | string;
+  is_positive?: boolean;
   bsps_solution: string;
   actionable_steps?: string;
 };

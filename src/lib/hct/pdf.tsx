@@ -196,7 +196,7 @@ export async function downloadExecutiveReport(
     (labelOf(PROBLEM_CATEGORIES, a.problem_category || "") || "—") +
       (isFohImpactCategory(a.problem_category) ? `\n${FOH_IMPACT_DISCLAIMER}` : ""),
     labelOf(DIAGNOSIS_TYPES, a.diagnosis_type || "") || "—",
-    formatEUR(Number(a.estimated_loss_eur ?? 0)),
+    a.is_positive ? "Positive Observation" : formatEUR(Number(a.estimated_loss_eur ?? 0)),
     (labelOf(BSPS_SOLUTIONS, a.bsps_solution || "") || "").split(" — ")[0] || "—",
     cleanSteps(a.actionable_steps) || "—",
   ]);

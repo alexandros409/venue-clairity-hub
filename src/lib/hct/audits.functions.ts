@@ -41,6 +41,7 @@ const CreateInput = z.object({
   problem_category: z.string().min(1),
   diagnosis_type: z.enum(["structure", "emotion", "both"]),
   estimated_loss_eur: z.number().nonnegative(),
+  is_positive: z.boolean().default(false),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
 });

@@ -45,6 +45,7 @@ type FormState = {
   estimated_loss_eur: string;
   bsps_solution: string;
   actionable_steps: string;
+  is_positive: boolean;
 };
 
 function AuditDetail() {

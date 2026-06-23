@@ -79,9 +79,10 @@ function NewAudit() {
       }
     : null;
   const profileOk = isVenueProfileComplete(venueProfile);
-  const computedLoss = profileOk && form.problem_category
+  const rawLoss = profileOk && form.problem_category
     ? lossForCategory(form.problem_category, venueProfile)
     : 0;
+  const computedLoss = form.is_positive ? 0 : rawLoss;
 
   function patch<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));

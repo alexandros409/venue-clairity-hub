@@ -61,6 +61,7 @@ function NewAudit() {
     estimated_loss_eur: "" as string | number,
     bsps_solution: "",
     actionable_steps: "",
+    is_positive: false,
   });
   const [analyzing, setAnalyzing] = useState(false);
 

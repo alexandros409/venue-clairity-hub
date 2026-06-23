@@ -133,7 +133,13 @@ function AuditsList() {
                       {formatDate(a.audit_date)}
                     </span>
                     <span className="tabular text-sm font-medium">
-                      {formatEUR(Number(a.estimated_loss_eur))}
+                      {(a as { is_positive?: boolean }).is_positive ? (
+                        <span className="rounded-sm bg-emerald-600/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.18em] text-emerald-700">
+                          Positive Observation
+                        </span>
+                      ) : (
+                        formatEUR(Number(a.estimated_loss_eur))
+                      )}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">

@@ -1,0 +1,1 @@
+ALTER TABLE public.audits ADD COLUMN IF NOT EXISTS is_positive boolean NOT NULL DEFAULT false;

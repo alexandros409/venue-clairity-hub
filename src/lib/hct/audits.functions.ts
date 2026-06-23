@@ -9,7 +9,7 @@ export const listAudits = createServerFn({ method: "GET" })
     let q = context.supabase
       .from("audits")
       .select(
-        "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, bsps_solution, actionable_steps, created_at",
+        "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, bsps_solution, actionable_steps, created_at",
       )
       .order("audit_date", { ascending: false })
       .order("created_at", { ascending: false });
@@ -41,6 +41,7 @@ const CreateInput = z.object({
   problem_category: z.string().min(1),
   diagnosis_type: z.enum(["structure", "emotion", "both"]),
   estimated_loss_eur: z.number().nonnegative(),
+  is_positive: z.boolean().default(false),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
 });
@@ -66,6 +67,7 @@ const UpdateInput = z.object({
   problem_category: z.string().min(1),
   diagnosis_type: z.enum(["structure", "emotion", "both"]),
   estimated_loss_eur: z.number().nonnegative(),
+  is_positive: z.boolean().default(false),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
 });

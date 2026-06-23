@@ -61,6 +61,7 @@ function NewAudit() {
     estimated_loss_eur: "" as string | number,
     bsps_solution: "",
     actionable_steps: "",
+    is_positive: false,
   });
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -78,9 +79,10 @@ function NewAudit() {
       }
     : null;
   const profileOk = isVenueProfileComplete(venueProfile);
-  const computedLoss = profileOk && form.problem_category
+  const rawLoss = profileOk && form.problem_category
     ? lossForCategory(form.problem_category, venueProfile)
     : 0;
+  const computedLoss = form.is_positive ? 0 : rawLoss;
 
   function patch<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -120,7 +122,8 @@ function NewAudit() {
           bottleneck: form.bottleneck,
           problem_category: form.problem_category,
           diagnosis_type: form.diagnosis_type as "structure" | "emotion" | "both",
-          estimated_loss_eur: Math.round(computedLoss),
+          estimated_loss_eur: form.is_positive ? 0 : Math.round(computedLoss),
+          is_positive: form.is_positive,
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
         },
@@ -226,6 +229,38 @@ function NewAudit() {
               </Select>
             </Field>
           </div>
+          <Field label="Observation Type">
+            <div className="inline-flex rounded-sm border border-hairline overflow-hidden">
+              <button
+                type="button"
+                onClick={() => patch("is_positive", false)}
+                className={`px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                  !form.is_positive
+                    ? "bg-foreground text-background"
+                    : "bg-card text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Negative
+              </button>
+              <button
+                type="button"
+                onClick={() => patch("is_positive", true)}
+                className={`border-l border-hairline px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                  form.is_positive
+                    ? "bg-emerald-600 text-white"
+                    : "bg-card text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Positive
+              </button>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              {form.is_positive
+                ? "Positive observation — financial loss is fixed at €0 and excluded from the safety cap and Chief Diagnosis."
+                : "Negative observation — financial loss is auto-calculated from the category formula."}
+            </p>
+          </Field>
+
 
           <Field
             label="Bottleneck Observation"
@@ -305,12 +340,16 @@ function NewAudit() {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Computed Loss (€ / incident)">
               <div className="tabular flex h-11 items-center rounded-sm border border-hairline bg-muted/40 px-3 text-sm font-medium">
-                {profileOk && form.problem_category
-                  ? formatEUR(Math.round(computedLoss))
-                  : "—"}
+                {form.is_positive
+                  ? <span className="text-emerald-700">Positive Observation · €0</span>
+                  : profileOk && form.problem_category
+                    ? formatEUR(Math.round(computedLoss))
+                    : "—"}
               </div>
               <p className="mt-1 text-[10px] text-muted-foreground">
-                Auto-calculated from venue profile + category. A 40 % safety cap is applied on the dashboard total.
+                {form.is_positive
+                  ? "Positive observations carry no financial loss."
+                  : "Auto-calculated from venue profile + category. A concept-specific safety cap is applied on the dashboard total."}
               </p>
             </Field>
             <Field label="BSPS Solution">

@@ -99,9 +99,10 @@ function AuditDetail() {
       }
     : null;
   const profileOk = isVenueProfileComplete(venueProfile);
-  const computedLoss = profileOk && form?.problem_category
+  const rawLoss = profileOk && form?.problem_category
     ? lossForCategory(form.problem_category, venueProfile)
     : 0;
+  const computedLoss = form?.is_positive ? 0 : rawLoss;
 
   const m = useMutation({
     mutationFn: () => {

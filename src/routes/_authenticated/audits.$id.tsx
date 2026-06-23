@@ -76,6 +76,7 @@ function AuditDetail() {
         estimated_loss_eur: String(q.data.estimated_loss_eur ?? ""),
         bsps_solution: q.data.bsps_solution ?? "",
         actionable_steps: q.data.actionable_steps ?? "",
+        is_positive: Boolean((q.data as { is_positive?: boolean }).is_positive ?? false),
       });
     }
   }, [q.data, form]);

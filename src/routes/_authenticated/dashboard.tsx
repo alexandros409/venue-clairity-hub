@@ -132,6 +132,11 @@ function Dashboard() {
     };
   }, [audits, capped]);
 
+  const severity = useMemo(
+    () => computeSeverity(cappedAudits, capped.capped_total, economics),
+    [cappedAudits, capped, economics],
+  );
+
   const topCritical = useMemo(
     () =>
       [...cappedAudits]

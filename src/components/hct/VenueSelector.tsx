@@ -94,10 +94,10 @@ export function VenueSelector({
         </Select>
       </div>
 
-      <div className="flex w-full gap-2 sm:w-auto">
+      <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
         {active && (
           <>
-            <div className="flex-1 sm:flex-none">
+            <div className="min-w-0 sm:flex-none">
               <ProfileDialog
                 venue={active}
                 incomplete={!isVenueProfileComplete({
@@ -109,7 +109,7 @@ export function VenueSelector({
                 })}
               />
             </div>
-            <div className="flex-1 sm:flex-none">
+            <div className="min-w-0 sm:flex-none">
               <DeleteVenueButton
                 venue={active}
                 onDeleted={() => onChange("")}
@@ -118,11 +118,11 @@ export function VenueSelector({
           </>
         )}
 
-        <div className="flex-1 sm:flex-none">
+        <div className="col-span-2 min-w-0 sm:col-span-1 sm:flex-none">
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="h-12 w-full rounded-sm border-hairline sm:w-auto">
-                <Plus className="mr-1 h-4 w-4" /> Add Venue
+                <Plus className="mr-1 h-4 w-4 shrink-0" /> Add Venue
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-sm">

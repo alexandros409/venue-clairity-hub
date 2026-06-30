@@ -46,7 +46,7 @@ function rowToProfile(row: VenueProfileRow): VenueProfile {
 function enforceServerSide(
   category: string,
   isPositive: boolean,
-  metrics: { delay_minutes: number; affected_covers: number },
+  metrics: { delay_minutes: number; affected_covers: number; is_walkout: boolean },
   actionable_steps: string,
   venue: VenueProfile,
 ): { estimated_loss_eur: number; actionable_steps: string } {
@@ -62,6 +62,7 @@ function enforceServerSide(
     actionable_steps,
   };
 }
+
 
 export const listAudits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

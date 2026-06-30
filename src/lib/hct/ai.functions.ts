@@ -193,9 +193,18 @@ const DiagnosisInput = z.object({
       estimated_loss_eur: z.union([z.number(), z.string()]),
       bsps_solution: z.string(),
       bottleneck: z.string(),
+      is_positive: z.boolean().optional(),
     }),
   ),
   language: z.enum(AI_OUTPUT_LANGUAGES).optional(),
+  severity: z
+    .object({
+      level: z.enum(["good", "moderate", "critical"]),
+      loss_pct_of_ceiling: z.number(),
+      positive_observations: z.number(),
+      negative_observations: z.number(),
+    })
+    .optional(),
 });
 
 export const generateChiefDiagnosis = createServerFn({ method: "POST" })

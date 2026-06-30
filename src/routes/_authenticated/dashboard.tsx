@@ -261,7 +261,7 @@ function Dashboard() {
         ) : (
           <>
             {!profileOk && (
-              <div className="mt-4 flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+              <div className="mt-3 flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <div className="font-medium">Venue profile incomplete.</div>
@@ -275,12 +275,12 @@ function Dashboard() {
             {profileOk && economics && (
               <>
                 {audits.length > 0 && (
-                  <div className="mt-4">
+                  <div className="mt-3">
                     <SeverityBanner severity={severity} />
                   </div>
                 )}
 
-                <section className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <section className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <MiniStat label="Bottlenecks" value={String(totals.count)} />
                   <MiniStat
                     label="Audited Loss"
@@ -319,15 +319,15 @@ function Dashboard() {
               </>
             )}
 
-            <section className="mt-4">
-              <div className="flex items-center justify-between">
+            <section className="mt-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
                   Recent Critical Bottlenecks
                 </h2>
                 <Link
                   to="/audits"
                   search={{ venue: activeId }}
-                  className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
+                  className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
                 >
                   View all →
                 </Link>

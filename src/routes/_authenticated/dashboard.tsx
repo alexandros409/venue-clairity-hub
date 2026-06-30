@@ -451,3 +451,45 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function SeverityBanner({
+  severity,
+}: {
+  severity: ReturnType<typeof computeSeverity>;
+}) {
+  const styles: Record<string, { box: string; text: string; pill: string }> = {
+    good: {
+      box: "border-emerald-300 bg-emerald-50",
+      text: "text-emerald-800",
+      pill: "bg-emerald-600 text-white",
+    },
+    moderate: {
+      box: "border-amber-300 bg-amber-50",
+      text: "text-amber-800",
+      pill: "bg-amber-600 text-white",
+    },
+    critical: {
+      box: "border-red-300 bg-red-50",
+      text: "text-red-800",
+      pill: "bg-red-600 text-white",
+    },
+  };
+  const s = styles[severity.level];
+  return (
+    <div className={`flex flex-wrap items-center justify-between gap-4 rounded-sm border px-5 py-4 ${s.box}`}>
+      <div className="flex items-center gap-4">
+        <span className={`rounded-sm px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] ${s.pill}`}>
+          {severity.label}
+        </span>
+        <div>
+          <div className={`text-[10px] uppercase tracking-[0.2em] ${s.text}`}>
+            Overall Severity
+          </div>
+          <div className={`mt-0.5 text-sm ${s.text}`}>
+            Loss {Math.round(severity.loss_pct_of_ceiling)} % of cap · {severity.positive_observations} positive / {severity.negative_observations} negative
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -48,9 +48,11 @@ type FormState = {
   bsps_solution: string;
   actionable_steps: string;
   is_positive: boolean;
+  is_walkout: boolean;
   delay_minutes: string;
   affected_covers: string;
 };
+
 
 function AuditDetail() {
   const { id } = Route.useParams();

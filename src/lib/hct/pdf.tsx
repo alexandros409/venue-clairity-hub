@@ -44,6 +44,7 @@ export async function downloadExecutiveReport(
   audits: Audit[],
   chiefDiagnosis?: string,
   economics?: { covers: number; revenue_ceiling: number; max_total_loss: number } | null,
+  severity?: { level: "good" | "moderate" | "critical"; label: string; loss_pct_of_ceiling: number; positive_observations: number; negative_observations: number } | null,
 ) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   registerUnicodeFonts(doc);

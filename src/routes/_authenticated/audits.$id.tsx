@@ -83,6 +83,7 @@ function AuditDetail() {
         bsps_solution: q.data.bsps_solution ?? "",
         actionable_steps: q.data.actionable_steps ?? "",
         is_positive: Boolean((q.data as { is_positive?: boolean }).is_positive ?? false),
+        is_walkout: Boolean((q.data as { is_walkout?: boolean }).is_walkout ?? false),
         delay_minutes: String(
           (q.data as { delay_minutes?: number | string | null }).delay_minutes
             ?? DEFAULT_OBS_METRICS.delay_minutes,
@@ -92,6 +93,7 @@ function AuditDetail() {
             ?? DEFAULT_OBS_METRICS.affected_covers,
         ),
       });
+
     }
   }, [q.data, form]);
 

@@ -156,17 +156,24 @@ function Dashboard() {
         const r = await diagnosisFn({
           data: {
             venueName: activeVenue.name,
-            audits: audits
-              .filter((a) => !(a as { is_positive?: boolean }).is_positive)
-              .map((a) => ({
-                audit_date: a.audit_date,
-                shift: a.shift,
-                problem_category: a.problem_category,
-                diagnosis_type: a.diagnosis_type,
-                estimated_loss_eur: a.estimated_loss_eur,
-                bsps_solution: a.bsps_solution,
-                bottleneck: a.bottleneck,
-              })),
+            audits: audits.map((a) => ({
+              audit_date: a.audit_date,
+              shift: a.shift,
+              problem_category: a.problem_category,
+              diagnosis_type: a.diagnosis_type,
+              estimated_loss_eur: (a as { is_positive?: boolean }).is_positive
+                ? 0
+                : a.estimated_loss_eur,
+              bsps_solution: a.bsps_solution,
+              bottleneck: a.bottleneck,
+              is_positive: Boolean((a as { is_positive?: boolean }).is_positive),
+            })),
+            severity: {
+              level: severity.level,
+              loss_pct_of_ceiling: severity.loss_pct_of_ceiling,
+              positive_observations: severity.positive_observations,
+              negative_observations: severity.negative_observations,
+            },
           },
         });
         chiefDiagnosis = r.text;
@@ -184,6 +191,7 @@ function Dashboard() {
         })),
         chiefDiagnosis,
         economics,
+        severity,
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");

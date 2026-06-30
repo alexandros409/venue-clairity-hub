@@ -299,25 +299,59 @@ function AuditDetail() {
               </Field>
 
               {!form.is_positive && (
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Affected Covers (this incident)">
-                    <Input
-                      inputMode="decimal"
-                      value={form.affected_covers}
-                      onChange={(e) => patch("affected_covers", e.target.value)}
-                      className="h-11 rounded-sm border-hairline"
-                    />
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Affected Covers (this incident)">
+                      <Input
+                        inputMode="decimal"
+                        value={form.affected_covers}
+                        onChange={(e) => patch("affected_covers", e.target.value)}
+                        className="h-11 rounded-sm border-hairline"
+                      />
+                    </Field>
+                    <Field label="Delay (minutes)">
+                      <Input
+                        inputMode="decimal"
+                        value={form.delay_minutes}
+                        onChange={(e) => patch("delay_minutes", e.target.value)}
+                        className="h-11 rounded-sm border-hairline"
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Full Customer Walk-out?">
+                    <div className="inline-flex rounded-sm border border-hairline overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => patch("is_walkout", false)}
+                        className={`px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                          !form.is_walkout
+                            ? "bg-foreground text-background"
+                            : "bg-card text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        No · Delay only
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => patch("is_walkout", true)}
+                        className={`border-l border-hairline px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                          form.is_walkout
+                            ? "bg-destructive text-white"
+                            : "bg-card text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        Yes · Walk-out
+                      </button>
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      {form.is_walkout
+                        ? "Walk-out — full avg check × affected covers will be applied."
+                        : "Default — small percentage of the avg check (degraded but served)."}
+                    </p>
                   </Field>
-                  <Field label="Delay (minutes)">
-                    <Input
-                      inputMode="decimal"
-                      value={form.delay_minutes}
-                      onChange={(e) => patch("delay_minutes", e.target.value)}
-                      className="h-11 rounded-sm border-hairline"
-                    />
-                  </Field>
-                </div>
+                </>
               )}
+
 
               <Field label="Bottleneck Observation">
                 <Textarea

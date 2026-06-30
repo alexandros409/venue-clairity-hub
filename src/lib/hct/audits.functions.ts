@@ -157,6 +157,8 @@ const UpdateInput = z.object({
   actionable_steps: z.string().default(""),
   delay_minutes: z.number().nonnegative().default(5),
   affected_covers: z.number().nonnegative().default(4),
+  is_walkout: z.boolean().default(false),
+
 });
 
 export const updateAudit = createServerFn({ method: "POST" })

@@ -8,7 +8,7 @@ import {
 } from "./constants";
 
 const AUDIT_COLS =
-  "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, bsps_solution, actionable_steps, delay_minutes, affected_covers, created_at";
+  "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, is_walkout, bsps_solution, actionable_steps, delay_minutes, affected_covers, created_at";
 
 const VENUE_PROFILE_COLS =
   "concept_type, tables, avg_covers_per_table, avg_check_per_person, cycles_per_shift";

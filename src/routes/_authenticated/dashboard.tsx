@@ -279,6 +279,12 @@ function Dashboard() {
               </section>
             )}
 
+            {audits.length > 0 && (
+              <section className="mt-8">
+                <SeverityBanner severity={severity} />
+              </section>
+            )}
+
             <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
               <KpiCard label="Total Bottlenecks">
                 <span className="tabular text-4xl font-medium">{totals.count}</span>

@@ -300,3 +300,65 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+function DeleteVenueButton({
+  venue,
+  onDeleted,
+}: {
+  venue: Venue;
+  onDeleted: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+  const deleteFn = useServerFn(deleteVenue);
+
+  const m = useMutation({
+    mutationFn: () => deleteFn({ data: { id: venue.id } }),
+    onSuccess: () => {
+      toast.success(`Venue "${venue.name}" and all its audits were deleted.`);
+      qc.invalidateQueries({ queryKey: ["venues"] });
+      qc.invalidateQueries({ queryKey: ["audits"] });
+      setOpen(false);
+      onDeleted();
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete venue"),
+  });
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="outline"
+          className="h-12 rounded-sm border-hairline text-destructive hover:bg-destructive/10 hover:text-destructive"
+          title="Delete venue (and all its audits)"
+        >
+          <Trash2 className="mr-1 h-4 w-4" />
+          Delete
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="rounded-sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete venue "{venue.name}"?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete the venue profile AND every audit
+            observation that belongs to it. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={m.isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              m.mutate();
+            }}
+            disabled={m.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {m.isPending ? "Deleting…" : "Delete venue"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}

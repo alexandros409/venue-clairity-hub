@@ -448,22 +448,6 @@ function MicroStat({ label, value }: { label: string; value: string }) {
 }
 
 
-function KpiCard({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-sm border border-hairline bg-card p-6">
-      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-4">{children}</div>
-    </div>
-  );
-}
 
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (

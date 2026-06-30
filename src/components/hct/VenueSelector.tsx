@@ -95,16 +95,22 @@ export function VenueSelector({
       </div>
 
       {active && (
-        <ProfileDialog
-          venue={active}
-          incomplete={!isVenueProfileComplete({
-            concept_type: active.concept_type ?? null,
-            tables: active.tables ?? null,
-            avg_covers_per_table: numOrNull(active.avg_covers_per_table),
-            avg_check_per_person: numOrNull(active.avg_check_per_person),
-            cycles_per_shift: numOrNull(active.cycles_per_shift),
-          })}
-        />
+        <>
+          <ProfileDialog
+            venue={active}
+            incomplete={!isVenueProfileComplete({
+              concept_type: active.concept_type ?? null,
+              tables: active.tables ?? null,
+              avg_covers_per_table: numOrNull(active.avg_covers_per_table),
+              avg_check_per_person: numOrNull(active.avg_check_per_person),
+              cycles_per_shift: numOrNull(active.cycles_per_shift),
+            })}
+          />
+          <DeleteVenueButton
+            venue={active}
+            onDeleted={() => onChange("")}
+          />
+        </>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>

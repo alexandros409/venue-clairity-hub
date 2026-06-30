@@ -8,7 +8,7 @@ import {
 } from "./constants";
 
 const AUDIT_COLS =
-  "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, bsps_solution, actionable_steps, delay_minutes, affected_covers, created_at";
+  "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, is_walkout, bsps_solution, actionable_steps, delay_minutes, affected_covers, created_at";
 
 const VENUE_PROFILE_COLS =
   "concept_type, tables, avg_covers_per_table, avg_check_per_person, cycles_per_shift";
@@ -46,7 +46,7 @@ function rowToProfile(row: VenueProfileRow): VenueProfile {
 function enforceServerSide(
   category: string,
   isPositive: boolean,
-  metrics: { delay_minutes: number; affected_covers: number },
+  metrics: { delay_minutes: number; affected_covers: number; is_walkout: boolean },
   actionable_steps: string,
   venue: VenueProfile,
 ): { estimated_loss_eur: number; actionable_steps: string } {
@@ -62,6 +62,7 @@ function enforceServerSide(
     actionable_steps,
   };
 }
+
 
 export const listAudits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -105,6 +106,8 @@ const CreateInput = z.object({
   actionable_steps: z.string().default(""),
   delay_minutes: z.number().nonnegative().default(5),
   affected_covers: z.number().nonnegative().default(4),
+  is_walkout: z.boolean().default(false),
+
 });
 
 export const createAudit = createServerFn({ method: "POST" })
@@ -122,7 +125,7 @@ export const createAudit = createServerFn({ method: "POST" })
     const enforced = enforceServerSide(
       data.problem_category,
       data.is_positive,
-      { delay_minutes: data.delay_minutes, affected_covers: data.affected_covers },
+      { delay_minutes: data.delay_minutes, affected_covers: data.affected_covers, is_walkout: data.is_walkout },
       data.actionable_steps,
       rowToProfile(venueRow as VenueProfileRow),
     );
@@ -154,6 +157,8 @@ const UpdateInput = z.object({
   actionable_steps: z.string().default(""),
   delay_minutes: z.number().nonnegative().default(5),
   affected_covers: z.number().nonnegative().default(4),
+  is_walkout: z.boolean().default(false),
+
 });
 
 export const updateAudit = createServerFn({ method: "POST" })
@@ -181,7 +186,7 @@ export const updateAudit = createServerFn({ method: "POST" })
     const enforced = enforceServerSide(
       patch.problem_category,
       patch.is_positive,
-      { delay_minutes: patch.delay_minutes, affected_covers: patch.affected_covers },
+      { delay_minutes: patch.delay_minutes, affected_covers: patch.affected_covers, is_walkout: patch.is_walkout },
       patch.actionable_steps,
       rowToProfile(venueRow as VenueProfileRow),
     );

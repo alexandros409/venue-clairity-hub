@@ -27,6 +27,7 @@ export type Database = {
           estimated_loss_eur: number
           id: string
           is_positive: boolean
+          is_walkout: boolean
           owner_id: string
           problem_category: string
           shift: string
@@ -44,6 +45,7 @@ export type Database = {
           estimated_loss_eur?: number
           id?: string
           is_positive?: boolean
+          is_walkout?: boolean
           owner_id: string
           problem_category: string
           shift: string
@@ -61,6 +63,7 @@ export type Database = {
           estimated_loss_eur?: number
           id?: string
           is_positive?: boolean
+          is_walkout?: boolean
           owner_id?: string
           problem_category?: string
           shift?: string

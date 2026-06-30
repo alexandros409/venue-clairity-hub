@@ -207,15 +207,38 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          Operational Diagnostics
+      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              Operational Diagnostics
+            </div>
+            <h1 className="mt-1 text-xl font-medium tracking-tight sm:text-2xl">
+              Audit Console
+            </h1>
+          </div>
+          {activeVenue && (
+            <div className="flex flex-wrap gap-2">
+              <Link
+                to="/audits/new"
+                search={{ venue: activeId }}
+                className="inline-flex h-9 items-center rounded-sm border border-hairline bg-card px-3 font-mono text-[10px] uppercase tracking-[0.2em] hover:bg-muted"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> New
+              </Link>
+              <Button
+                onClick={onExport}
+                disabled={exporting || audits.length === 0}
+                className="h-9 rounded-sm bg-foreground px-3 font-mono text-[10px] uppercase tracking-[0.2em] text-background hover:bg-foreground/90"
+              >
+                <FileDown className="mr-1.5 h-3.5 w-3.5" />
+                {exporting ? "Generating…" : "Export PDF"}
+              </Button>
+            </div>
+          )}
         </div>
-        <h1 className="mt-3 text-3xl font-medium tracking-tight">
-          Audit Console
-        </h1>
 
-        <div className="mt-8 rounded-sm border border-hairline bg-card p-6">
+        <div className="mt-4 rounded-sm border border-hairline bg-card p-4">
           <VenueSelector
             venues={venues}
             value={activeId}
@@ -238,85 +261,65 @@ function Dashboard() {
         ) : (
           <>
             {!profileOk && (
-              <div className="mt-8 flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+              <div className="mt-4 flex items-start gap-3 rounded-sm border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <div className="font-medium">Venue profile incomplete.</div>
                   <div className="mt-1 text-destructive/80">
-                    Open <strong>Setup Profile</strong> next to the venue selector and fill in concept, tables, covers, average check and cycles. Observations cannot be saved until this is done, and financial loss cannot be calculated.
+                    Open <strong>Setup Profile</strong> and fill in concept, tables, covers, average check and cycles. Observations cannot be saved until this is done.
                   </div>
                 </div>
               </div>
             )}
 
             {profileOk && economics && (
-              <section className="mt-8 rounded-sm border border-hairline bg-card p-5">
-                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Venue Economics —{" "}
-                  {labelOf(CONCEPT_TYPES, activeVenue!.concept_type ?? "")}
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  <Stat label="Covers / Shift" value={String(economics.covers)} />
-                  <Stat
+              <>
+                {audits.length > 0 && (
+                  <div className="mt-4">
+                    <SeverityBanner severity={severity} />
+                  </div>
+                )}
+
+                <section className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <MiniStat label="Bottlenecks" value={String(totals.count)} />
+                  <MiniStat
+                    label="Audited Loss"
+                    value={formatEUR(totals.total)}
+                    hint={
+                      totals.capped
+                        ? `Capped · raw ${formatEUR(totals.raw_total)}`
+                        : undefined
+                    }
+                    accent
+                  />
+                  <MiniStat
+                    label="Struct · Emo"
+                    value={`${totals.structPct}/${totals.emoPct}`}
+                  >
+                    <div className="mt-2 flex h-1 overflow-hidden rounded-sm bg-muted">
+                      <div className="bg-foreground" style={{ width: `${totals.structPct}%` }} />
+                      <div className="bg-gold" style={{ width: `${totals.emoPct}%` }} />
+                    </div>
+                  </MiniStat>
+                  <MiniStat
+                    label="Max Loss Cap"
+                    value={formatEUR(Math.round(economics.max_total_loss))}
+                    hint={`${Math.round((economics.max_total_loss / economics.revenue_ceiling) * 100)} % of ceiling`}
+                  />
+                </section>
+
+                <section className="mt-3 grid grid-cols-3 gap-2 rounded-sm border border-hairline bg-card px-3 py-2 text-[11px]">
+                  <MicroStat label="Concept" value={labelOf(CONCEPT_TYPES, activeVenue!.concept_type ?? "")} />
+                  <MicroStat label="Covers / Shift" value={String(economics.covers)} />
+                  <MicroStat
                     label="Revenue Ceiling"
                     value={formatEUR(Math.round(economics.revenue_ceiling))}
                   />
-                  <Stat
-                    label={`Max Loss (${
-                      economics.revenue_ceiling > 0
-                        ? Math.round(
-                            (economics.max_total_loss / economics.revenue_ceiling) * 100,
-                          )
-                        : 0
-                    } %)`}
-                    value={formatEUR(Math.round(economics.max_total_loss))}
-                  />
-                  <Stat
-                    label="Avg Check / Person"
-                    value={formatEUR(Number(activeVenue!.avg_check_per_person ?? 0))}
-                  />
-                </div>
-              </section>
+                </section>
+              </>
             )}
 
-            {audits.length > 0 && (
-              <section className="mt-8">
-                <SeverityBanner severity={severity} />
-              </section>
-            )}
-
-            <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-              <KpiCard label="Total Bottlenecks">
-                <span className="tabular text-4xl font-medium">{totals.count}</span>
-              </KpiCard>
-              <KpiCard label="Audited Financial Loss">
-                <span className="tabular text-4xl font-medium">
-                  {formatEUR(totals.total)}
-                </span>
-                {totals.capped && (
-                  <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-gold">
-                    Capped at {economics ? Math.round((economics.max_total_loss / economics.revenue_ceiling) * 100) : 0} % of ceiling (raw {formatEUR(totals.raw_total)})
-                  </div>
-                )}
-              </KpiCard>
-              <KpiCard label="Structural · Emotional">
-                <div className="mt-1 flex items-end gap-3">
-                  <span className="tabular text-2xl font-medium">
-                    {totals.structPct}
-                    <span className="text-base text-muted-foreground"> / {totals.emoPct}</span>
-                  </span>
-                </div>
-                <div className="mt-3 flex h-1.5 overflow-hidden rounded-sm bg-muted">
-                  <div
-                    className="bg-foreground"
-                    style={{ width: `${totals.structPct}%` }}
-                  />
-                  <div className="bg-gold" style={{ width: `${totals.emoPct}%` }} />
-                </div>
-              </KpiCard>
-            </section>
-
-            <section className="mt-10">
+            <section className="mt-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
                   Recent Critical Bottlenecks
@@ -329,20 +332,20 @@ function Dashboard() {
                   View all →
                 </Link>
               </div>
-              <div className="mt-4 overflow-hidden rounded-sm border border-hairline bg-card">
+              <div className="mt-2 overflow-hidden rounded-sm border border-hairline bg-card">
                 {topCritical.length === 0 ? (
-                  <div className="px-6 py-10 text-center text-sm text-muted-foreground">
+                  <div className="px-4 py-6 text-center text-xs text-muted-foreground">
                     No audit entries yet for this venue.
                   </div>
                 ) : (
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-hairline text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                  <table className="w-full text-xs sm:text-sm">
+                    <thead className="border-b border-hairline text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
                       <tr>
-                        <th className="px-4 py-3 text-left font-normal">Date</th>
-                        <th className="px-4 py-3 text-left font-normal">Shift</th>
-                        <th className="px-4 py-3 text-left font-normal">Category</th>
-                        <th className="px-4 py-3 text-right font-normal">Loss</th>
-                        <th className="px-4 py-3 text-right font-normal">BSPS</th>
+                        <th className="px-2 py-2 text-left font-normal sm:px-4">Date</th>
+                        <th className="hidden px-4 py-2 text-left font-normal sm:table-cell">Shift</th>
+                        <th className="px-2 py-2 text-left font-normal sm:px-4">Category</th>
+                        <th className="px-2 py-2 text-right font-normal sm:px-4">Loss</th>
+                        <th className="px-2 py-2 text-right font-normal sm:px-4">BSPS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -351,13 +354,13 @@ function Dashboard() {
                           key={a.id}
                           className="border-b border-hairline last:border-0 hover:bg-muted/40"
                         >
-                          <td className="tabular px-4 py-3">
+                          <td className="tabular px-2 py-2 sm:px-4">
                             {formatDate(a.audit_date)}
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">
+                          <td className="hidden px-4 py-2 text-muted-foreground sm:table-cell">
                             {labelOf(SHIFTS, a.shift)}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-2 sm:px-4">
                             <Link
                               to="/audits/$id"
                               params={{ id: a.id }}
@@ -366,11 +369,15 @@ function Dashboard() {
                               {labelOf(PROBLEM_CATEGORIES, a.problem_category)}
                             </Link>
                           </td>
-                          <td className="tabular px-4 py-3 text-right font-medium">
-                            {formatEUR(a.capped_loss_eur)}
+                          <td className="tabular px-2 py-2 text-right font-medium sm:px-4">
+                            {a.is_positive ? (
+                              <span className="text-emerald-700">€0</span>
+                            ) : (
+                              formatEUR(a.capped_loss_eur)
+                            )}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="inline-flex items-center rounded-sm border border-gold/40 bg-gold/10 px-2 py-0.5 font-mono text-[10px] text-foreground">
+                          <td className="px-2 py-2 text-right sm:px-4">
+                            <span className="inline-flex items-center rounded-sm border border-gold/40 bg-gold/10 px-1.5 py-0.5 font-mono text-[9px] text-foreground">
                               {labelOf(BSPS_SOLUTIONS, a.bsps_solution).split(" — ")[0]}
                             </span>
                           </td>
@@ -382,28 +389,9 @@ function Dashboard() {
               </div>
             </section>
 
-            <section className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-8">
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                {activeVenue.name}
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  to="/audits/new"
-                  search={{ venue: activeId }}
-                  className="inline-flex h-11 items-center rounded-sm border border-hairline bg-card px-5 font-mono text-xs uppercase tracking-[0.2em] hover:bg-muted"
-                >
-                  <Plus className="mr-2 h-4 w-4" /> New Audit
-                </Link>
-                <Button
-                  onClick={onExport}
-                  disabled={exporting || audits.length === 0}
-                  className="h-11 rounded-sm bg-foreground px-5 font-mono text-xs uppercase tracking-[0.2em] text-background hover:bg-foreground/90"
-                >
-                  <FileDown className="mr-2 h-4 w-4" />
-                  {exporting ? "Generating…" : "Export Executive Report"}
-                </Button>
-              </div>
-            </section>
+            <div className="mt-6 border-t border-hairline pt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              {activeVenue.name}
+            </div>
           </>
         )}
       </main>
@@ -411,22 +399,55 @@ function Dashboard() {
   );
 }
 
-function KpiCard({
+function MiniStat({
   label,
+  value,
+  hint,
+  accent,
   children,
 }: {
   label: string;
-  children: React.ReactNode;
+  value: string;
+  hint?: string;
+  accent?: boolean;
+  children?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-sm border border-hairline bg-card p-6">
-      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+    <div className="rounded-sm border border-hairline bg-card p-3">
+      <div className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
         {label}
       </div>
-      <div className="mt-4">{children}</div>
+      <div
+        className={`tabular mt-1 text-lg font-medium leading-tight sm:text-xl ${
+          accent ? "text-foreground" : ""
+        }`}
+      >
+        {value}
+      </div>
+      {hint && (
+        <div className="mt-1 text-[9px] uppercase tracking-[0.16em] text-gold">
+          {hint}
+        </div>
+      )}
+      {children}
     </div>
   );
 }
+
+function MicroStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="tabular mt-0.5 truncate text-xs font-medium sm:text-sm">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+
 
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
@@ -441,16 +462,6 @@ function EmptyState({ title, body }: { title: string; body: string }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="tabular mt-1 text-lg font-medium">{value}</div>
-    </div>
-  );
-}
 
 function SeverityBanner({
   severity,
@@ -476,20 +487,17 @@ function SeverityBanner({
   };
   const s = styles[severity.level];
   return (
-    <div className={`flex flex-wrap items-center justify-between gap-4 rounded-sm border px-5 py-4 ${s.box}`}>
-      <div className="flex items-center gap-4">
-        <span className={`rounded-sm px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] ${s.pill}`}>
-          {severity.label}
-        </span>
-        <div>
-          <div className={`text-[10px] uppercase tracking-[0.2em] ${s.text}`}>
-            Overall Severity
-          </div>
-          <div className={`mt-0.5 text-sm ${s.text}`}>
-            Loss {Math.round(severity.loss_pct_of_ceiling)} % of cap · {severity.positive_observations} positive / {severity.negative_observations} negative
-          </div>
+    <div className={`flex items-center gap-3 rounded-sm border px-3 py-2 ${s.box}`}>
+      <span className={`rounded-sm px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.2em] ${s.pill}`}>
+        {severity.label}
+      </span>
+      <div className={`min-w-0 text-[11px] leading-tight ${s.text}`}>
+        <div className="text-[9px] uppercase tracking-[0.2em]">Overall Severity</div>
+        <div className="truncate">
+          Loss {Math.round(severity.loss_pct_of_ceiling)} % of cap · {severity.positive_observations} pos / {severity.negative_observations} neg
         </div>
       </div>
     </div>
   );
 }
+

@@ -20,6 +20,7 @@ const LANGUAGE_NAME: Record<AiOutputLanguage, string> = {
 const Input = z.object({
   bottleneck: z.string().min(4),
   language: z.enum(AI_OUTPUT_LANGUAGES).optional(),
+  is_positive: z.boolean().optional(),
 });
 
 const CATEGORIES = [
@@ -129,6 +130,19 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
 
     const outputLang: AiOutputLanguage = data.language ?? DEFAULT_AI_OUTPUT_LANGUAGE;
     const stepsLangName = LANGUAGE_NAME[outputLang];
+    const isPositive = Boolean(data.is_positive);
+
+    const stepsInstruction = isPositive
+      ? [
+          `This is a POSITIVE observation (a good practice worth preserving), NOT a problem.`,
+          `Actionable steps MUST be REINFORCEMENT-style — never corrective, never disciplinary, never a fix protocol.`,
+          `Produce exactly 3 short imperative sentences in ${stepsLangName} that:`,
+          `  (1) record/document the exact behavior or steps the team executed so they can be replicated;`,
+          `  (2) publicly recognize/reward the team members who delivered it (e.g. at the next pre-shift briefing);`,
+          `  (3) reuse the observation as a training case study or onboarding example.`,
+          `NEVER use words like "διορθώστε", "πρόβλημα", "αδυναμία", "fix", "correct", "improve". This is reinforcement only.`,
+        ].join("\n")
+      : `actionable_steps: array of exactly 3 short imperative corrective sentences, written in ${stepsLangName}`;
 
     const system = [
       "You are SDT (Service Diagnostic Tool), a restaurant operations auditor for Alexandros Chatziliadis.",
@@ -142,7 +156,7 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
       `  "diagnosis_type": one of ${DIAGNOSES.join(" | ")} (English enum value, do NOT translate),`,
       `  "estimated_loss_eur": number (EUR per shift, no thousand separators, no currency symbol),`,
       `  "bsps_solution": one of ${BSPS.join(" | ")} (English code, do NOT translate),`,
-      `  "actionable_steps": array of exactly 3 short imperative sentences, written in ${stepsLangName}`,
+      `  ${stepsInstruction}`,
       `}`,
       `IMPORTANT: every string inside "actionable_steps" MUST be written in ${stepsLangName}, regardless of the input language. Do not mix languages.`,
       "Be precise, B2B, no fluff. Output JSON only.",
@@ -151,7 +165,7 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
     const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
       system,
-      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nReturn the JSON object now. Remember: actionable_steps in ${stepsLangName}.`,
+      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nObservation type: ${isPositive ? "POSITIVE (reinforcement only — no corrective steps)" : "NEGATIVE (corrective)"}\nReturn the JSON object now. Remember: actionable_steps in ${stepsLangName}.`,
     });
 
     let parsed: unknown;

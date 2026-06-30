@@ -2,15 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+const AUDIT_COLS =
+  "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, bsps_solution, actionable_steps, delay_minutes, affected_covers, created_at";
+
 export const listAudits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ venueId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("audits")
-      .select(
-        "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, bsps_solution, actionable_steps, created_at",
-      )
+      .select(AUDIT_COLS)
       .order("audit_date", { ascending: false })
       .order("created_at", { ascending: false });
     if (data.venueId) q = q.eq("venue_id", data.venueId);
@@ -44,6 +45,8 @@ const CreateInput = z.object({
   is_positive: z.boolean().default(false),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
+  delay_minutes: z.number().nonnegative().default(5),
+  affected_covers: z.number().nonnegative().default(4),
 });
 
 export const createAudit = createServerFn({ method: "POST" })
@@ -70,6 +73,8 @@ const UpdateInput = z.object({
   is_positive: z.boolean().default(false),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
+  delay_minutes: z.number().nonnegative().default(5),
+  affected_covers: z.number().nonnegative().default(4),
 });
 
 export const updateAudit = createServerFn({ method: "POST" })

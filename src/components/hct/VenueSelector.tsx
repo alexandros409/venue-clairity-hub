@@ -16,11 +16,22 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { createVenue, updateVenueProfile } from "@/lib/hct/venues.functions";
+import { createVenue, updateVenueProfile, deleteVenue } from "@/lib/hct/venues.functions";
 import { CONCEPT_TYPES, isVenueProfileComplete } from "@/lib/hct/constants";
-import { Plus, Settings2 } from "lucide-react";
+import { Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Venue = {

@@ -487,20 +487,17 @@ function SeverityBanner({
   };
   const s = styles[severity.level];
   return (
-    <div className={`flex flex-wrap items-center justify-between gap-4 rounded-sm border px-5 py-4 ${s.box}`}>
-      <div className="flex items-center gap-4">
-        <span className={`rounded-sm px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] ${s.pill}`}>
-          {severity.label}
-        </span>
-        <div>
-          <div className={`text-[10px] uppercase tracking-[0.2em] ${s.text}`}>
-            Overall Severity
-          </div>
-          <div className={`mt-0.5 text-sm ${s.text}`}>
-            Loss {Math.round(severity.loss_pct_of_ceiling)} % of cap · {severity.positive_observations} positive / {severity.negative_observations} negative
-          </div>
+    <div className={`flex items-center gap-3 rounded-sm border px-3 py-2 ${s.box}`}>
+      <span className={`rounded-sm px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.2em] ${s.pill}`}>
+        {severity.label}
+      </span>
+      <div className={`min-w-0 text-[11px] leading-tight ${s.text}`}>
+        <div className="text-[9px] uppercase tracking-[0.2em]">Overall Severity</div>
+        <div className="truncate">
+          Loss {Math.round(severity.loss_pct_of_ceiling)} % of cap · {severity.positive_observations} pos / {severity.negative_observations} neg
         </div>
       </div>
     </div>
   );
 }
+

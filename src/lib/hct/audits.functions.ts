@@ -186,7 +186,7 @@ export const updateAudit = createServerFn({ method: "POST" })
     const enforced = enforceServerSide(
       patch.problem_category,
       patch.is_positive,
-      { delay_minutes: patch.delay_minutes, affected_covers: patch.affected_covers },
+      { delay_minutes: patch.delay_minutes, affected_covers: patch.affected_covers, is_walkout: patch.is_walkout },
       patch.actionable_steps,
       rowToProfile(venueRow as VenueProfileRow),
     );

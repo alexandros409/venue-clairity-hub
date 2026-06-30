@@ -123,18 +123,21 @@ export function venueEconomics(p: VenueProfile | null | undefined): VenueEconomi
 }
 
 /**
- * Per-observation loss formula. `affected_covers` is interpreted as the
- * number of guests whose experience was materially damaged — at the upper
- * bound (service_flow, leadership_boundaries) they represent walk-outs /
- * no-return guests, so the loss is the FULL avg check per cover. Lower-impact
- * categories scale a fraction of the check. `delay_minutes` adds a small
- * degradation factor on top.
+ * Per-observation loss formula. The dominant signal is the explicit
+ * `is_walkout` flag: only when the consultant marks an observation as a real
+ * customer walk-out do we apply the full per-cover check. Without that flag,
+ * the same affected_covers represent a degraded — but still served —
+ * experience, and the formula uses a small percentage of the check.
  *
- *   - service_flow          → ac × check × 1.00  + dm × check × 0.02
- *   - leadership_boundaries → ac × check × 1.00  (reputation / no-return)
- *   - kitchen_pass          → ac × check × 0.40  + dm × check × 0.02
- *   - billing_checkout      → ac × check × 0.25
- *   - staff_fatigue         → ac × check × 0.30  + dm × check × 0.10
+ *   WALK-OUT (is_walkout = true, any category):
+ *     loss = affected_covers × check × 1.00
+ *
+ *   NON-WALK-OUT (delay / degradation only):
+ *     service_flow          → ac × check × 0.12 + dm × check × 0.02
+ *     leadership_boundaries → ac × check × 0.10
+ *     kitchen_pass          → ac × check × 0.10 + dm × check × 0.02
+ *     billing_checkout      → ac × check × 0.10
+ *     staff_fatigue         → ac × check × 0.10 + dm × check × 0.05
  *
  * Defaults: delay_minutes = 5, affected_covers = 4. Data-driven; not keyed
  * off the revenue ceiling, so values can never drift toward the cap by design.
@@ -142,11 +145,13 @@ export function venueEconomics(p: VenueProfile | null | undefined): VenueEconomi
 export type ObservationMetrics = {
   delay_minutes?: number | null;
   affected_covers?: number | null;
+  is_walkout?: boolean | null;
 };
 
 export const DEFAULT_OBS_METRICS = {
   delay_minutes: 5,
   affected_covers: 4,
+  is_walkout: false,
 } as const;
 
 export function lossForCategory(
@@ -159,21 +164,24 @@ export function lossForCategory(
   const check = Number(p.avg_check_per_person);
   const dm = Math.max(0, Number(metrics?.delay_minutes ?? DEFAULT_OBS_METRICS.delay_minutes));
   const ac = Math.max(0, Number(metrics?.affected_covers ?? DEFAULT_OBS_METRICS.affected_covers));
+  const walkout = Boolean(metrics?.is_walkout);
+  if (walkout) return ac * check * 1.0;
   switch (category) {
     case "service_flow":
-      return ac * check * 1.0 + dm * check * 0.02;
+      return ac * check * 0.12 + dm * check * 0.02;
     case "leadership_boundaries":
-      return ac * check * 1.0;
+      return ac * check * 0.1;
     case "kitchen_pass":
-      return ac * check * 0.4 + dm * check * 0.02;
+      return ac * check * 0.1 + dm * check * 0.02;
     case "billing_checkout":
-      return ac * check * 0.25;
+      return ac * check * 0.1;
     case "staff_fatigue":
-      return ac * check * 0.3 + dm * check * 0.1;
+      return ac * check * 0.1 + dm * check * 0.05;
     default:
       return 0;
   }
 }
+
 
 // ───────────────────────── Severity scoring ─────────────────────────
 

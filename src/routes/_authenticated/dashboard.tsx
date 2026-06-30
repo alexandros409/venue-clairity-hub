@@ -20,6 +20,7 @@ import {
   venueEconomics,
   applySafetyCap,
   isVenueProfileComplete,
+  computeSeverity,
 } from "@/lib/hct/constants";
 import { downloadExecutiveReport } from "@/lib/hct/pdf";
 import { generateChiefDiagnosis } from "@/lib/hct/ai.functions";
@@ -131,6 +132,11 @@ function Dashboard() {
     };
   }, [audits, capped]);
 
+  const severity = useMemo(
+    () => computeSeverity(cappedAudits, capped.capped_total, economics),
+    [cappedAudits, capped, economics],
+  );
+
   const topCritical = useMemo(
     () =>
       [...cappedAudits]
@@ -150,17 +156,24 @@ function Dashboard() {
         const r = await diagnosisFn({
           data: {
             venueName: activeVenue.name,
-            audits: audits
-              .filter((a) => !(a as { is_positive?: boolean }).is_positive)
-              .map((a) => ({
-                audit_date: a.audit_date,
-                shift: a.shift,
-                problem_category: a.problem_category,
-                diagnosis_type: a.diagnosis_type,
-                estimated_loss_eur: a.estimated_loss_eur,
-                bsps_solution: a.bsps_solution,
-                bottleneck: a.bottleneck,
-              })),
+            audits: audits.map((a) => ({
+              audit_date: a.audit_date,
+              shift: a.shift,
+              problem_category: a.problem_category,
+              diagnosis_type: a.diagnosis_type,
+              estimated_loss_eur: (a as { is_positive?: boolean }).is_positive
+                ? 0
+                : a.estimated_loss_eur,
+              bsps_solution: a.bsps_solution,
+              bottleneck: a.bottleneck,
+              is_positive: Boolean((a as { is_positive?: boolean }).is_positive),
+            })),
+            severity: {
+              level: severity.level,
+              loss_pct_of_ceiling: severity.loss_pct_of_ceiling,
+              positive_observations: severity.positive_observations,
+              negative_observations: severity.negative_observations,
+            },
           },
         });
         chiefDiagnosis = r.text;
@@ -178,6 +191,7 @@ function Dashboard() {
         })),
         chiefDiagnosis,
         economics,
+        severity,
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");
@@ -262,6 +276,12 @@ function Dashboard() {
                     value={formatEUR(Number(activeVenue!.avg_check_per_person ?? 0))}
                   />
                 </div>
+              </section>
+            )}
+
+            {audits.length > 0 && (
+              <section className="mt-8">
+                <SeverityBanner severity={severity} />
               </section>
             )}
 
@@ -428,6 +448,48 @@ function Stat({ label, value }: { label: string; value: string }) {
         {label}
       </div>
       <div className="tabular mt-1 text-lg font-medium">{value}</div>
+    </div>
+  );
+}
+
+function SeverityBanner({
+  severity,
+}: {
+  severity: ReturnType<typeof computeSeverity>;
+}) {
+  const styles: Record<string, { box: string; text: string; pill: string }> = {
+    good: {
+      box: "border-emerald-300 bg-emerald-50",
+      text: "text-emerald-800",
+      pill: "bg-emerald-600 text-white",
+    },
+    moderate: {
+      box: "border-amber-300 bg-amber-50",
+      text: "text-amber-800",
+      pill: "bg-amber-600 text-white",
+    },
+    critical: {
+      box: "border-red-300 bg-red-50",
+      text: "text-red-800",
+      pill: "bg-red-600 text-white",
+    },
+  };
+  const s = styles[severity.level];
+  return (
+    <div className={`flex flex-wrap items-center justify-between gap-4 rounded-sm border px-5 py-4 ${s.box}`}>
+      <div className="flex items-center gap-4">
+        <span className={`rounded-sm px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] ${s.pill}`}>
+          {severity.label}
+        </span>
+        <div>
+          <div className={`text-[10px] uppercase tracking-[0.2em] ${s.text}`}>
+            Overall Severity
+          </div>
+          <div className={`mt-0.5 text-sm ${s.text}`}>
+            Loss {Math.round(severity.loss_pct_of_ceiling)} % of cap · {severity.positive_observations} positive / {severity.negative_observations} negative
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -44,6 +44,7 @@ export async function downloadExecutiveReport(
   audits: Audit[],
   chiefDiagnosis?: string,
   economics?: { covers: number; revenue_ceiling: number; max_total_loss: number } | null,
+  severity?: { level: "good" | "moderate" | "critical"; label: string; loss_pct_of_ceiling: number; positive_observations: number; negative_observations: number } | null,
 ) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   registerUnicodeFonts(doc);
@@ -126,6 +127,42 @@ export async function downloadExecutiveReport(
     doc.text(k.value, x + 10, y + 44);
   });
   y += kpiH + 16;
+
+  if (severity) {
+    const palette: Record<string, [number, number, number]> = {
+      good: [22, 101, 52],
+      moderate: [161, 98, 7],
+      critical: [153, 27, 27],
+    };
+    const fill: Record<string, [number, number, number]> = {
+      good: [236, 253, 245],
+      moderate: [255, 247, 237],
+      critical: [254, 242, 242],
+    };
+    const c = palette[severity.level];
+    const f = fill[severity.level];
+    const bw = pageWidth - margin * 2;
+    const bh = 46;
+    doc.setDrawColor(c[0], c[1], c[2]);
+    doc.setFillColor(f[0], f[1], f[2]);
+    doc.setLineWidth(0.8);
+    doc.rect(margin, y, bw, bh, "FD");
+    doc.setFontSize(7);
+    doc.setTextColor(120);
+    doc.setFont(FONT_FAMILY, "normal");
+    doc.text("OVERALL SEVERITY", margin + 12, y + 14);
+    doc.setFont(FONT_FAMILY, "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(c[0], c[1], c[2]);
+    doc.text(severity.label.toUpperCase(), margin + 12, y + 34);
+    doc.setFont(FONT_FAMILY, "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(60);
+    const meta = `Loss ${Math.round(severity.loss_pct_of_ceiling)} % of cap   ·   ${severity.positive_observations} positive / ${severity.negative_observations} negative observations`;
+    doc.text(meta, margin + 152, y + 30);
+    y += bh + 16;
+  }
+
 
   if (economics) {
     doc.setFont(FONT_FAMILY, "normal");

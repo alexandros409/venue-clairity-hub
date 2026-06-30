@@ -123,20 +123,21 @@ export function venueEconomics(p: VenueProfile | null | undefined): VenueEconomi
 }
 
 /**
- * Per-observation loss formula based on problem_category, venue profile,
- * and observation-level measurable inputs:
- *   - `affected_covers` — number of guests/covers actually impacted by the incident
- *   - `delay_minutes`   — minutes of disruption observed
+ * Per-observation loss formula. `affected_covers` is interpreted as the
+ * number of guests whose experience was materially damaged — at the upper
+ * bound (service_flow, leadership_boundaries) they represent walk-outs /
+ * no-return guests, so the loss is the FULL avg check per cover. Lower-impact
+ * categories scale a fraction of the check. `delay_minutes` adds a small
+ * degradation factor on top.
  *
- * Formulas (per single observation):
- *   - service_flow         → affected_covers × avg_check × 0.15  (15% upsell foregone)
- *   - kitchen_pass         → affected_covers × avg_check × 0.10  (FOH recovery loss)
- *   - billing_checkout     → affected_covers × avg_check × 0.05  (checkout friction)
- *   - staff_fatigue        → delay_minutes  × avg_check × 0.50   (morale / pace cost)
- *   - leadership_boundaries→ affected_covers × avg_check × 0.20  (reputation / no-return)
+ *   - service_flow          → ac × check × 1.00  + dm × check × 0.02
+ *   - leadership_boundaries → ac × check × 1.00  (reputation / no-return)
+ *   - kitchen_pass          → ac × check × 0.40  + dm × check × 0.02
+ *   - billing_checkout      → ac × check × 0.25
+ *   - staff_fatigue         → ac × check × 0.30  + dm × check × 0.10
  *
- * Defaults: delay_minutes = 5, affected_covers = 4. Pure data-driven; nothing
- * is keyed off the revenue ceiling, so values cannot drift toward the cap by design.
+ * Defaults: delay_minutes = 5, affected_covers = 4. Data-driven; not keyed
+ * off the revenue ceiling, so values can never drift toward the cap by design.
  */
 export type ObservationMetrics = {
   delay_minutes?: number | null;
@@ -160,18 +161,81 @@ export function lossForCategory(
   const ac = Math.max(0, Number(metrics?.affected_covers ?? DEFAULT_OBS_METRICS.affected_covers));
   switch (category) {
     case "service_flow":
-      return ac * check * 0.15;
-    case "kitchen_pass":
-      return ac * check * 0.1;
-    case "billing_checkout":
-      return ac * check * 0.05;
-    case "staff_fatigue":
-      return dm * check * 0.5;
+      return ac * check * 1.0 + dm * check * 0.02;
     case "leadership_boundaries":
-      return ac * check * 0.2;
+      return ac * check * 1.0;
+    case "kitchen_pass":
+      return ac * check * 0.4 + dm * check * 0.02;
+    case "billing_checkout":
+      return ac * check * 0.25;
+    case "staff_fatigue":
+      return ac * check * 0.3 + dm * check * 0.1;
     default:
       return 0;
   }
+}
+
+// ───────────────────────── Severity scoring ─────────────────────────
+
+export type SeverityLevel = "good" | "moderate" | "critical";
+
+export type SeverityScore = {
+  level: SeverityLevel;
+  label: string;
+  loss_pct_of_ceiling: number; // 0..100
+  positive_ratio: number;       // 0..1
+  total_observations: number;
+  positive_observations: number;
+  negative_observations: number;
+};
+
+const SEVERITY_LABEL: Record<SeverityLevel, string> = {
+  good: "Good",
+  moderate: "Moderate",
+  critical: "Critical",
+};
+
+/**
+ * Overall venue severity, used by Chief Diagnosis to calibrate tone and shown
+ * in the Executive Summary.
+ *
+ *   - critical : loss ≥ 60% of max cap OR ≥ 70% of findings negative AND ≥ 5 negatives
+ *   - good     : loss ≤ 20% of max cap AND positive_ratio ≥ 50%
+ *   - moderate : everything else
+ */
+export function computeSeverity(
+  audits: ReadonlyArray<{ is_positive?: boolean | null }>,
+  totalCappedLoss: number,
+  econ: VenueEconomics | null | undefined,
+): SeverityScore {
+  const total = audits.length;
+  const positive = audits.filter((a) => Boolean(a.is_positive)).length;
+  const negative = total - positive;
+  const positive_ratio = total > 0 ? positive / total : 0;
+  const ceiling = econ?.max_total_loss ?? 0;
+  const loss_pct_of_ceiling = ceiling > 0 ? Math.min(100, (totalCappedLoss / ceiling) * 100) : 0;
+
+  let level: SeverityLevel = "moderate";
+  if (
+    loss_pct_of_ceiling >= 60 ||
+    (negative >= 5 && positive_ratio <= 0.3)
+  ) {
+    level = "critical";
+  } else if (loss_pct_of_ceiling <= 20 && positive_ratio >= 0.5) {
+    level = "good";
+  } else if (total === 0) {
+    level = "good";
+  }
+
+  return {
+    level,
+    label: SEVERITY_LABEL[level],
+    loss_pct_of_ceiling,
+    positive_ratio,
+    total_observations: total,
+    positive_observations: positive,
+    negative_observations: negative,
+  };
 }
 
 export const POSITIVE_REINFORCEMENT_STEPS = [

@@ -193,9 +193,18 @@ const DiagnosisInput = z.object({
       estimated_loss_eur: z.union([z.number(), z.string()]),
       bsps_solution: z.string(),
       bottleneck: z.string(),
+      is_positive: z.boolean().optional(),
     }),
   ),
   language: z.enum(AI_OUTPUT_LANGUAGES).optional(),
+  severity: z
+    .object({
+      level: z.enum(["good", "moderate", "critical"]),
+      loss_pct_of_ceiling: z.number(),
+      positive_observations: z.number(),
+      negative_observations: z.number(),
+    })
+    .optional(),
 });
 
 export const generateChiefDiagnosis = createServerFn({ method: "POST" })
@@ -228,30 +237,65 @@ export const generateChiefDiagnosis = createServerFn({ method: "POST" })
     const summaryLines = data.audits
       .map(
         (a, i) =>
-          `${i + 1}. [${a.audit_date} · ${a.shift}] cat=${a.problem_category} diag=${a.diagnosis_type} loss=${a.estimated_loss_eur}€ bsps=${a.bsps_solution} — ${a.bottleneck.slice(0, 240)}`,
+          `${i + 1}. ${a.is_positive ? "[POS]" : "[NEG]"} [${a.audit_date} · ${a.shift}] cat=${a.problem_category} diag=${a.diagnosis_type} loss=${a.estimated_loss_eur}€ bsps=${a.bsps_solution} — ${a.bottleneck.slice(0, 240)}`,
       )
       .join("\n");
+
+    const severity = data.severity;
+    const toneBlock = (() => {
+      if (!severity) return "TONE: Balanced professional. Acknowledge both strengths and weaknesses honestly.";
+      if (severity.level === "good") {
+        return [
+          "TONE: POSITIVE and ENCOURAGING. The venue is operating well overall.",
+          "Open by recognizing what is working (smooth service, engaged staff, positive guest experience).",
+          "Frame issues as MINOR refinements or growth opportunities — never 'serious failures', never 'systemic breakdown', never dramatic language.",
+          "Do NOT use words like: σοβαρές αστοχίες, αποδιοργάνωση, κρίσιμα προβλήματα, επείγον, severe, critical failure, disorganization.",
+          "Use words like: ευκαιρίες βελτίωσης, εξέλιξη, καλή βάση, μικρές προσαρμογές, refinement, polish, opportunity.",
+        ].join(" ");
+      }
+      if (severity.level === "moderate") {
+        return [
+          "TONE: BALANCED. Acknowledge BOTH what works well AND what needs attention.",
+          "Open by recognizing operational strengths, then clearly name the 1-2 patterns that need correction.",
+          "Avoid dramatic / urgent vocabulary. Avoid words like: αποδιοργάνωση, σοβαρές συστημικές αστοχίες, επείγον, κρίσιμα.",
+          "Use words like: σημεία προς βελτίωση, στοχευμένες παρεμβάσεις, ενίσχυση πρωτοκόλλων, areas to strengthen.",
+        ].join(" ");
+      }
+      return [
+        "TONE: URGENT and DIRECT. The venue shows critical operational issues that require immediate action.",
+        "Name the systemic failures clearly. Use firm, decisive vocabulary.",
+        "Words like κρίσιμες αστοχίες, επείγουσα ανάγκη παρέμβασης, αποδιοργάνωση πρωτοκόλλων are appropriate.",
+        "Still: frame as systemic (missing structure, absent protocols), never attack individuals.",
+      ].join(" ");
+    })();
 
     const system = [
       "You are SDT (Service Diagnostic Tool), senior restaurant operations auditor for Alexandros Chatziliadis.",
       "You write a single executive paragraph called 'Chief Diagnosis' for the venue owner.",
       "You are a FOH (Front of House) consultant. Your diagnosis must NEVER mention kitchen operations, food cost, BOH (back of house), or cooking processes. Focus exclusively on: service flow, staff behavior, upselling, guest experience, FOH leadership, billing, and table management. Any issue that originates in the kitchen must be reframed as its FOH consequence only.",
-      "TONE: Write with a firm, professional, and constructive tone. Never attack individuals or use words like 'apathy', 'indifference', 'incompetence', or 'unprofessional'. Frame all issues as systemic failures: missing structure, absent protocols, undefined roles, lack of training. The owner must feel urgency to act — not shame about their staff. Example reframe: instead of 'staff show complete apathy' write 'the team operates without direction or defined service standards'.",
+      toneBlock,
+      "Never attack individuals. Frame issues as systemic (missing structure, absent protocols, undefined roles, lack of training) — never personal traits.",
+      "CRITICAL: Your tone MUST match the severity level provided. Mismatched tone (e.g. dramatic language for a 'good' venue) makes the report unreliable and will be rejected by the client.",
       `Write strictly in ${langName}. Do not mix languages.`,
       "Exactly 3 to 5 sentences. No bullet lists, no headings, no markdown — plain prose only.",
-      "Cover: (1) overall operational situation of the venue, (2) the most critical recurring pattern across the audits, (3) where the owner must focus FIRST.",
+      "Cover: (1) overall operational situation of the venue (calibrated to severity), (2) the most relevant pattern across the audits, (3) where the owner should focus next.",
       "Be specific, B2B, no fluff, no greetings, no closing line.",
     ].join("\n");
 
+    const severityLine = severity
+      ? `Overall severity: ${severity.level.toUpperCase()} (loss ${Math.round(severity.loss_pct_of_ceiling)}% of cap, ${severity.positive_observations} positive vs ${severity.negative_observations} negative observations)`
+      : "Overall severity: unspecified";
+
     const prompt = [
       `Venue: ${data.venueName}`,
+      severityLine,
       `Total audited financial loss: ${totalLoss}€`,
       `Number of observations: ${data.audits.length}`,
       "",
-      "Observations:",
+      "Observations (POS = positive/reinforcement, NEG = negative/corrective):",
       summaryLines,
       "",
-      `Now write the Chief Diagnosis paragraph in ${langName}.`,
+      `Now write the Chief Diagnosis paragraph in ${langName}, calibrated to the ${severity?.level ?? "moderate"} severity level.`,
     ].join("\n");
 
     const { text } = await generateText({

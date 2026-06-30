@@ -20,6 +20,7 @@ import {
   venueEconomics,
   applySafetyCap,
   isVenueProfileComplete,
+  computeSeverity,
 } from "@/lib/hct/constants";
 import { downloadExecutiveReport } from "@/lib/hct/pdf";
 import { generateChiefDiagnosis } from "@/lib/hct/ai.functions";

@@ -119,8 +119,10 @@ function AuditDetail() {
     ? {
         delay_minutes: Number(form.delay_minutes) || 0,
         affected_covers: Number(form.affected_covers) || 0,
+        is_walkout: form.is_walkout,
       }
     : undefined;
+
   const rawLoss = profileOk && form?.problem_category
     ? lossForCategory(form.problem_category, venueProfile, obsMetrics)
     : 0;

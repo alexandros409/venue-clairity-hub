@@ -16,11 +16,22 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { createVenue, updateVenueProfile } from "@/lib/hct/venues.functions";
+import { createVenue, updateVenueProfile, deleteVenue } from "@/lib/hct/venues.functions";
 import { CONCEPT_TYPES, isVenueProfileComplete } from "@/lib/hct/constants";
-import { Plus, Settings2 } from "lucide-react";
+import { Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Venue = {
@@ -84,16 +95,22 @@ export function VenueSelector({
       </div>
 
       {active && (
-        <ProfileDialog
-          venue={active}
-          incomplete={!isVenueProfileComplete({
-            concept_type: active.concept_type ?? null,
-            tables: active.tables ?? null,
-            avg_covers_per_table: numOrNull(active.avg_covers_per_table),
-            avg_check_per_person: numOrNull(active.avg_check_per_person),
-            cycles_per_shift: numOrNull(active.cycles_per_shift),
-          })}
-        />
+        <>
+          <ProfileDialog
+            venue={active}
+            incomplete={!isVenueProfileComplete({
+              concept_type: active.concept_type ?? null,
+              tables: active.tables ?? null,
+              avg_covers_per_table: numOrNull(active.avg_covers_per_table),
+              avg_check_per_person: numOrNull(active.avg_check_per_person),
+              cycles_per_shift: numOrNull(active.cycles_per_shift),
+            })}
+          />
+          <DeleteVenueButton
+            venue={active}
+            onDeleted={() => onChange("")}
+          />
+        </>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -281,5 +298,67 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </label>
       {children}
     </div>
+  );
+}
+
+function DeleteVenueButton({
+  venue,
+  onDeleted,
+}: {
+  venue: Venue;
+  onDeleted: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+  const deleteFn = useServerFn(deleteVenue);
+
+  const m = useMutation({
+    mutationFn: () => deleteFn({ data: { id: venue.id } }),
+    onSuccess: () => {
+      toast.success(`Venue "${venue.name}" and all its audits were deleted.`);
+      qc.invalidateQueries({ queryKey: ["venues"] });
+      qc.invalidateQueries({ queryKey: ["audits"] });
+      setOpen(false);
+      onDeleted();
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete venue"),
+  });
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="outline"
+          className="h-12 rounded-sm border-hairline text-destructive hover:bg-destructive/10 hover:text-destructive"
+          title="Delete venue (and all its audits)"
+        >
+          <Trash2 className="mr-1 h-4 w-4" />
+          Delete
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="rounded-sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete venue "{venue.name}"?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete the venue profile AND every audit
+            observation that belongs to it. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={m.isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              m.mutate();
+            }}
+            disabled={m.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {m.isPending ? "Deleting…" : "Delete venue"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

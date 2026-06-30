@@ -29,6 +29,8 @@ import {
   formatEUR,
   isVenueProfileComplete,
   lossForCategory,
+  DEFAULT_OBS_METRICS,
+  POSITIVE_REINFORCEMENT_TEXT,
 } from "@/lib/hct/constants";
 import { Sparkles, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -62,6 +64,8 @@ function NewAudit() {
     bsps_solution: "",
     actionable_steps: "",
     is_positive: false,
+    delay_minutes: String(DEFAULT_OBS_METRICS.delay_minutes),
+    affected_covers: String(DEFAULT_OBS_METRICS.affected_covers),
   });
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -79,8 +83,12 @@ function NewAudit() {
       }
     : null;
   const profileOk = isVenueProfileComplete(venueProfile);
+  const obsMetrics = {
+    delay_minutes: Number(form.delay_minutes) || 0,
+    affected_covers: Number(form.affected_covers) || 0,
+  };
   const rawLoss = profileOk && form.problem_category
-    ? lossForCategory(form.problem_category, venueProfile)
+    ? lossForCategory(form.problem_category, venueProfile, obsMetrics)
     : 0;
   const computedLoss = form.is_positive ? 0 : rawLoss;
 
@@ -95,13 +103,17 @@ function NewAudit() {
     }
     setAnalyzing(true);
     try {
-      const r = await analyzeFn({ data: { bottleneck: form.bottleneck } });
+      const r = await analyzeFn({
+        data: { bottleneck: form.bottleneck, is_positive: form.is_positive },
+      });
       setForm((f) => ({
         ...f,
         problem_category: r.problem_category,
         diagnosis_type: r.diagnosis_type,
         bsps_solution: r.bsps_solution,
-        actionable_steps: r.actionable_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"),
+        actionable_steps: f.is_positive
+          ? POSITIVE_REINFORCEMENT_TEXT
+          : r.actionable_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"),
       }));
       toast.success("AI diagnosis ready — review and edit before saving.");
     } catch (e) {
@@ -109,6 +121,21 @@ function NewAudit() {
     } finally {
       setAnalyzing(false);
     }
+  }
+
+  // When user toggles Positive, replace stale corrective steps with the
+  // canonical reinforcement template so positive entries never carry over
+  // a corrective protocol from a previous AI run.
+  function setPositive(v: boolean) {
+    setForm((f) => ({
+      ...f,
+      is_positive: v,
+      actionable_steps: v
+        ? POSITIVE_REINFORCEMENT_TEXT
+        : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
+          ? ""
+          : f.actionable_steps,
+    }));
   }
 
   const m = useMutation({
@@ -126,6 +153,8 @@ function NewAudit() {
           is_positive: form.is_positive,
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
+          delay_minutes: Number(form.delay_minutes) || 0,
+          affected_covers: Number(form.affected_covers) || 0,
         },
       });
     },
@@ -233,7 +262,7 @@ function NewAudit() {
             <div className="inline-flex rounded-sm border border-hairline overflow-hidden">
               <button
                 type="button"
-                onClick={() => patch("is_positive", false)}
+                onClick={() => setPositive(false)}
                 className={`px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
                   !form.is_positive
                     ? "bg-foreground text-background"
@@ -244,7 +273,7 @@ function NewAudit() {
               </button>
               <button
                 type="button"
-                onClick={() => patch("is_positive", true)}
+                onClick={() => setPositive(true)}
                 className={`border-l border-hairline px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
                   form.is_positive
                     ? "bg-emerald-600 text-white"
@@ -260,6 +289,35 @@ function NewAudit() {
                 : "Negative observation — financial loss is auto-calculated from the category formula."}
             </p>
           </Field>
+
+          {!form.is_positive && (
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Affected Covers (this incident)">
+                <Input
+                  inputMode="decimal"
+                  value={form.affected_covers}
+                  onChange={(e) => patch("affected_covers", e.target.value)}
+                  className="h-11 rounded-sm border-hairline"
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Number of guests/covers directly impacted by this single observation.
+                </p>
+              </Field>
+              <Field label="Delay (minutes)">
+                <Input
+                  inputMode="decimal"
+                  value={form.delay_minutes}
+                  onChange={(e) => patch("delay_minutes", e.target.value)}
+                  className="h-11 rounded-sm border-hairline"
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Minutes of disruption observed (used mainly for staff fatigue & flow categories).
+                </p>
+              </Field>
+            </div>
+          )}
+
+
 
 
           <Field

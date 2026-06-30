@@ -54,3 +54,21 @@ export const updateVenueProfile = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return row;
   });
+
+export const deleteVenue = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    // Delete every audit attached to this venue first, then the venue itself.
+    const { error: auditsErr } = await context.supabase
+      .from("audits")
+      .delete()
+      .eq("venue_id", data.id);
+    if (auditsErr) throw new Error(auditsErr.message);
+    const { error: venueErr } = await context.supabase
+      .from("venues")
+      .delete()
+      .eq("id", data.id);
+    if (venueErr) throw new Error(venueErr.message);
+    return { id: data.id };
+  });

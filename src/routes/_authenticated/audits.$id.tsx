@@ -26,6 +26,8 @@ import {
   formatEUR,
   isVenueProfileComplete,
   lossForCategory,
+  DEFAULT_OBS_METRICS,
+  POSITIVE_REINFORCEMENT_TEXT,
 } from "@/lib/hct/constants";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -46,6 +48,8 @@ type FormState = {
   bsps_solution: string;
   actionable_steps: string;
   is_positive: boolean;
+  delay_minutes: string;
+  affected_covers: string;
 };
 
 function AuditDetail() {
@@ -77,6 +81,14 @@ function AuditDetail() {
         bsps_solution: q.data.bsps_solution ?? "",
         actionable_steps: q.data.actionable_steps ?? "",
         is_positive: Boolean((q.data as { is_positive?: boolean }).is_positive ?? false),
+        delay_minutes: String(
+          (q.data as { delay_minutes?: number | string | null }).delay_minutes
+            ?? DEFAULT_OBS_METRICS.delay_minutes,
+        ),
+        affected_covers: String(
+          (q.data as { affected_covers?: number | string | null }).affected_covers
+            ?? DEFAULT_OBS_METRICS.affected_covers,
+        ),
       });
     }
   }, [q.data, form]);
@@ -99,10 +111,32 @@ function AuditDetail() {
       }
     : null;
   const profileOk = isVenueProfileComplete(venueProfile);
+  const obsMetrics = form
+    ? {
+        delay_minutes: Number(form.delay_minutes) || 0,
+        affected_covers: Number(form.affected_covers) || 0,
+      }
+    : undefined;
   const rawLoss = profileOk && form?.problem_category
-    ? lossForCategory(form.problem_category, venueProfile)
+    ? lossForCategory(form.problem_category, venueProfile, obsMetrics)
     : 0;
   const computedLoss = form?.is_positive ? 0 : rawLoss;
+
+  function setPositive(v: boolean) {
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            is_positive: v,
+            actionable_steps: v
+              ? POSITIVE_REINFORCEMENT_TEXT
+              : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
+                ? ""
+                : f.actionable_steps,
+          }
+        : f,
+    );
+  }
 
   const m = useMutation({
     mutationFn: () => {
@@ -120,6 +154,8 @@ function AuditDetail() {
           is_positive: form.is_positive,
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
+          delay_minutes: Number(form.delay_minutes) || 0,
+          affected_covers: Number(form.affected_covers) || 0,
         },
       });
     },
@@ -226,7 +262,7 @@ function AuditDetail() {
                 <div className="inline-flex rounded-sm border border-hairline overflow-hidden">
                   <button
                     type="button"
-                    onClick={() => patch("is_positive", false)}
+                    onClick={() => setPositive(false)}
                     className={`px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
                       !form.is_positive
                         ? "bg-foreground text-background"
@@ -237,7 +273,7 @@ function AuditDetail() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => patch("is_positive", true)}
+                    onClick={() => setPositive(true)}
                     className={`border-l border-hairline px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
                       form.is_positive
                         ? "bg-emerald-600 text-white"
@@ -250,9 +286,30 @@ function AuditDetail() {
                 <p className="mt-1 text-[10px] text-muted-foreground">
                   {form.is_positive
                     ? "Positive observation — financial loss is fixed at €0 and excluded from the safety cap and Chief Diagnosis."
-                    : "Negative observation — financial loss is auto-calculated from the category formula."}
+                    : "Negative observation — financial loss is auto-calculated from the category formula and observation metrics."}
                 </p>
               </Field>
+
+              {!form.is_positive && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Affected Covers (this incident)">
+                    <Input
+                      inputMode="decimal"
+                      value={form.affected_covers}
+                      onChange={(e) => patch("affected_covers", e.target.value)}
+                      className="h-11 rounded-sm border-hairline"
+                    />
+                  </Field>
+                  <Field label="Delay (minutes)">
+                    <Input
+                      inputMode="decimal"
+                      value={form.delay_minutes}
+                      onChange={(e) => patch("delay_minutes", e.target.value)}
+                      className="h-11 rounded-sm border-hairline"
+                    />
+                  </Field>
+                </div>
+              )}
 
               <Field label="Bottleneck Observation">
                 <Textarea

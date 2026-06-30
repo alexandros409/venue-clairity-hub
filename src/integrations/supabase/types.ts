@@ -17,10 +17,12 @@ export type Database = {
       audits: {
         Row: {
           actionable_steps: string
+          affected_covers: number
           audit_date: string
           bottleneck: string
           bsps_solution: string
           created_at: string
+          delay_minutes: number
           diagnosis_type: string
           estimated_loss_eur: number
           id: string
@@ -32,10 +34,12 @@ export type Database = {
         }
         Insert: {
           actionable_steps?: string
+          affected_covers?: number
           audit_date: string
           bottleneck: string
           bsps_solution: string
           created_at?: string
+          delay_minutes?: number
           diagnosis_type: string
           estimated_loss_eur?: number
           id?: string
@@ -47,10 +51,12 @@ export type Database = {
         }
         Update: {
           actionable_steps?: string
+          affected_covers?: number
           audit_date?: string
           bottleneck?: string
           bsps_solution?: string
           created_at?: string
+          delay_minutes?: number
           diagnosis_type?: string
           estimated_loss_eur?: number
           id?: string

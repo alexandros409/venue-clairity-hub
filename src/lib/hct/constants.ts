@@ -123,33 +123,66 @@ export function venueEconomics(p: VenueProfile | null | undefined): VenueEconomi
 }
 
 /**
- * Per-observation loss formula based on problem_category and venue profile.
- * - service_flow / kitchen_pass → upsell loss
- * - billing_checkout            → per-incident (avg_check × 2)
- * - staff_fatigue               → 10% of revenue ceiling
- * - leadership_boundaries       → reputation (avg_check × 5)
+ * Per-observation loss formula based on problem_category, venue profile,
+ * and observation-level measurable inputs:
+ *   - `affected_covers` — number of guests/covers actually impacted by the incident
+ *   - `delay_minutes`   — minutes of disruption observed
+ *
+ * Formulas (per single observation):
+ *   - service_flow         → affected_covers × avg_check × 0.15  (15% upsell foregone)
+ *   - kitchen_pass         → affected_covers × avg_check × 0.10  (FOH recovery loss)
+ *   - billing_checkout     → affected_covers × avg_check × 0.05  (checkout friction)
+ *   - staff_fatigue        → delay_minutes  × avg_check × 0.50   (morale / pace cost)
+ *   - leadership_boundaries→ affected_covers × avg_check × 0.20  (reputation / no-return)
+ *
+ * Defaults: delay_minutes = 5, affected_covers = 4. Pure data-driven; nothing
+ * is keyed off the revenue ceiling, so values cannot drift toward the cap by design.
  */
+export type ObservationMetrics = {
+  delay_minutes?: number | null;
+  affected_covers?: number | null;
+};
+
+export const DEFAULT_OBS_METRICS = {
+  delay_minutes: 5,
+  affected_covers: 4,
+} as const;
+
 export function lossForCategory(
   category: string,
   p: VenueProfile | null | undefined,
+  metrics?: ObservationMetrics,
 ): number {
   const econ = venueEconomics(p);
   if (!econ || !p) return 0;
   const check = Number(p.avg_check_per_person);
+  const dm = Math.max(0, Number(metrics?.delay_minutes ?? DEFAULT_OBS_METRICS.delay_minutes));
+  const ac = Math.max(0, Number(metrics?.affected_covers ?? DEFAULT_OBS_METRICS.affected_covers));
   switch (category) {
     case "service_flow":
+      return ac * check * 0.15;
     case "kitchen_pass":
-      return econ.covers * (check * 0.15) * 0.3;
+      return ac * check * 0.1;
     case "billing_checkout":
-      return check * 2;
+      return ac * check * 0.05;
     case "staff_fatigue":
-      return econ.revenue_ceiling * 0.1;
+      return dm * check * 0.5;
     case "leadership_boundaries":
-      return check * 5;
+      return ac * check * 0.2;
     default:
       return 0;
   }
 }
+
+export const POSITIVE_REINFORCEMENT_STEPS = [
+  "Καταγράψτε αναλυτικά τα βήματα και τις συμπεριφορές της ομάδας που οδήγησαν στο θετικό αποτέλεσμα, ώστε να αποτυπωθούν ως πρότυπο καλής πρακτικής.",
+  "Επιβραβεύστε δημόσια τα μέλη της ομάδας που συνέβαλαν σε αυτή την εμπειρία, στο επόμενο pre-shift briefing.",
+  "Χρησιμοποιήστε την παρατήρηση ως εκπαιδευτικό case study στην επόμενη εσωτερική συνάντηση της ομάδας FOH.",
+] as const;
+
+export const POSITIVE_REINFORCEMENT_TEXT = POSITIVE_REINFORCEMENT_STEPS
+  .map((s, i) => `${i + 1}. ${s}`)
+  .join("\n");
 
 /**
  * Apply the 40%-of-ceiling safety cap proportionally across rows.

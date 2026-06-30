@@ -70,13 +70,13 @@ export function VenueSelector({
   const active = venues.find((v) => v.id === value);
 
   return (
-    <div className="flex items-end gap-3">
-      <div className="flex-1">
+    <div className="flex flex-wrap items-end gap-3">
+      <div className="w-full sm:flex-1">
         <label className="mb-2 block text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           Venue
         </label>
         <Select value={value ?? ""} onValueChange={onChange}>
-          <SelectTrigger className="h-12 rounded-sm border-hairline bg-card text-left text-base">
+          <SelectTrigger className="h-12 w-full rounded-sm border-hairline bg-card text-left text-base">
             <SelectValue placeholder="Select a venue…" />
           </SelectTrigger>
           <SelectContent>
@@ -94,53 +94,61 @@ export function VenueSelector({
         </Select>
       </div>
 
-      {active && (
-        <>
-          <ProfileDialog
-            venue={active}
-            incomplete={!isVenueProfileComplete({
-              concept_type: active.concept_type ?? null,
-              tables: active.tables ?? null,
-              avg_covers_per_table: numOrNull(active.avg_covers_per_table),
-              avg_check_per_person: numOrNull(active.avg_check_per_person),
-              cycles_per_shift: numOrNull(active.cycles_per_shift),
-            })}
-          />
-          <DeleteVenueButton
-            venue={active}
-            onDeleted={() => onChange("")}
-          />
-        </>
-      )}
+      <div className="flex w-full gap-2 sm:w-auto">
+        {active && (
+          <>
+            <div className="flex-1 sm:flex-none">
+              <ProfileDialog
+                venue={active}
+                incomplete={!isVenueProfileComplete({
+                  concept_type: active.concept_type ?? null,
+                  tables: active.tables ?? null,
+                  avg_covers_per_table: numOrNull(active.avg_covers_per_table),
+                  avg_check_per_person: numOrNull(active.avg_check_per_person),
+                  cycles_per_shift: numOrNull(active.cycles_per_shift),
+                })}
+              />
+            </div>
+            <div className="flex-1 sm:flex-none">
+              <DeleteVenueButton
+                venue={active}
+                onDeleted={() => onChange("")}
+              />
+            </div>
+          </>
+        )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" className="h-12 rounded-sm border-hairline">
-            <Plus className="mr-1 h-4 w-4" /> Add Venue
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="rounded-sm">
-          <DialogHeader>
-            <DialogTitle>Add new venue</DialogTitle>
-          </DialogHeader>
-          <Input
-            autoFocus
-            placeholder="e.g. Ristorante Marenostro"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="rounded-sm"
-          />
-          <DialogFooter>
-            <Button
-              onClick={() => name.trim() && m.mutate(name.trim())}
-              disabled={!name.trim() || m.isPending}
-              className="rounded-sm bg-foreground text-background"
-            >
-              {m.isPending ? "Adding…" : "Add Venue"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <div className="flex-1 sm:flex-none">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="h-12 w-full rounded-sm border-hairline sm:w-auto">
+                <Plus className="mr-1 h-4 w-4" /> Add Venue
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="rounded-sm">
+              <DialogHeader>
+                <DialogTitle>Add new venue</DialogTitle>
+              </DialogHeader>
+              <Input
+                autoFocus
+                placeholder="e.g. Ristorante Marenostro"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="rounded-sm"
+              />
+              <DialogFooter>
+                <Button
+                  onClick={() => name.trim() && m.mutate(name.trim())}
+                  disabled={!name.trim() || m.isPending}
+                  className="rounded-sm bg-foreground text-background"
+                >
+                  {m.isPending ? "Adding…" : "Add Venue"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
     </div>
   );
 }

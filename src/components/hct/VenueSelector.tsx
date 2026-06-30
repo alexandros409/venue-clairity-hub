@@ -220,7 +220,7 @@ function ProfileDialog({ venue, incomplete }: { venue: Venue; incomplete: boolea
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className={`h-12 rounded-sm border-hairline ${incomplete ? "border-destructive/60 text-destructive" : ""}`}
+          className={`h-12 w-full rounded-sm border-hairline sm:w-auto ${incomplete ? "border-destructive/60 text-destructive" : ""}`}
           title="Edit venue profile"
         >
           <Settings2 className="mr-1 h-4 w-4" />
@@ -338,7 +338,7 @@ function DeleteVenueButton({
       <AlertDialogTrigger asChild>
         <Button
           variant="outline"
-          className="h-12 rounded-sm border-hairline text-destructive hover:bg-destructive/10 hover:text-destructive"
+          className="h-12 w-full rounded-sm border-hairline text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
           title="Delete venue (and all its audits)"
         >
           <Trash2 className="mr-1 h-4 w-4" />

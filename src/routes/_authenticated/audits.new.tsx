@@ -64,9 +64,11 @@ function NewAudit() {
     bsps_solution: "",
     actionable_steps: "",
     is_positive: false,
+    is_walkout: false,
     delay_minutes: String(DEFAULT_OBS_METRICS.delay_minutes),
     affected_covers: String(DEFAULT_OBS_METRICS.affected_covers),
   });
+
   const [analyzing, setAnalyzing] = useState(false);
 
   const activeVenue = venues.find((v) => v.id === form.venue_id);

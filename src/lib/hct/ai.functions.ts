@@ -237,7 +237,7 @@ export const generateChiefDiagnosis = createServerFn({ method: "POST" })
     const summaryLines = data.audits
       .map(
         (a, i) =>
-          `${i + 1}. [${a.audit_date} · ${a.shift}] cat=${a.problem_category} diag=${a.diagnosis_type} loss=${a.estimated_loss_eur}€ bsps=${a.bsps_solution} — ${a.bottleneck.slice(0, 240)}`,
+          `${i + 1}. ${a.is_positive ? "[POS]" : "[NEG]"} [${a.audit_date} · ${a.shift}] cat=${a.problem_category} diag=${a.diagnosis_type} loss=${a.estimated_loss_eur}€ bsps=${a.bsps_solution} — ${a.bottleneck.slice(0, 240)}`,
       )
       .join("\n");
 

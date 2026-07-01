@@ -28,6 +28,9 @@ import {
   lossForCategory,
   DEFAULT_OBS_METRICS,
   POSITIVE_REINFORCEMENT_TEXT,
+  EXPERIENCE_IMPACTS,
+  type ObservationType,
+  type ExperienceImpact,
 } from "@/lib/hct/constants";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";

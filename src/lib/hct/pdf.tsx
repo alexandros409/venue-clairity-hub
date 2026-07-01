@@ -239,16 +239,25 @@ export async function downloadExecutiveReport(
   const cleanSteps = (s?: string) =>
     (s ?? "").replace(/\s+/g, " ").trim();
 
-  const rows = audits.map((a) => [
-    formatDate(a.audit_date),
-    labelOf(SHIFTS, a.shift || "") || "—",
-    (labelOf(PROBLEM_CATEGORIES, a.problem_category || "") || "—") +
-      (isFohImpactCategory(a.problem_category) ? `\n${FOH_IMPACT_DISCLAIMER}` : ""),
-    labelOf(DIAGNOSIS_TYPES, a.diagnosis_type || "") || "—",
-    a.is_positive ? "Positive Observation" : formatEUR(Number(a.estimated_loss_eur ?? 0)),
-    (labelOf(BSPS_SOLUTIONS, a.bsps_solution || "") || "").split(" — ")[0] || "—",
-    cleanSteps(a.actionable_steps) || "—",
-  ]);
+  const rows = audits.map((a) => {
+    const t = obsTypeOf(a);
+    const financialCell =
+      t === "positive"
+        ? "Positive Observation"
+        : t === "emotional"
+          ? `Emotional Impact\n${(a.experience_impact ?? "medium").toString().toUpperCase()}`
+          : formatEUR(Number(a.estimated_loss_eur ?? 0));
+    return [
+      formatDate(a.audit_date),
+      labelOf(SHIFTS, a.shift || "") || "—",
+      (labelOf(PROBLEM_CATEGORIES, a.problem_category || "") || "—") +
+        (isFohImpactCategory(a.problem_category) ? `\n${FOH_IMPACT_DISCLAIMER}` : ""),
+      labelOf(DIAGNOSIS_TYPES, a.diagnosis_type || "") || "—",
+      financialCell,
+      (labelOf(BSPS_SOLUTIONS, a.bsps_solution || "") || "").split(" — ")[0] || "—",
+      cleanSteps(a.actionable_steps) || "—",
+    ];
+  });
 
   autoTable(doc, {
     startY: y + 4,

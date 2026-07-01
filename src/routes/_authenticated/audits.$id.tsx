@@ -50,7 +50,8 @@ type FormState = {
   estimated_loss_eur: string;
   bsps_solution: string;
   actionable_steps: string;
-  is_positive: boolean;
+  observation_type: ObservationType;
+  experience_impact: ExperienceImpact;
   is_walkout: boolean;
   delay_minutes: string;
   affected_covers: string;

@@ -119,7 +119,10 @@ export async function downloadExecutiveReport(
   const kpis = [
     { label: "TOTAL OBSERVATIONS", value: String(audits.length) },
     { label: "AUDITED FINANCIAL LOSS", value: formatEUR(totalLoss) },
-    { label: "STRUCTURAL / EMOTIONAL", value: `${struct} / ${emo}` },
+    {
+      label: "STRUCTURAL / EMOTIONAL / EXPERIENTIAL",
+      value: `${structural} / ${emotional} / ${experiential}`,
+    },
   ];
   kpis.forEach((k, i) => {
     const x = margin + i * (kpiW + 10);

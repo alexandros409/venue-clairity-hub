@@ -166,17 +166,17 @@ function Dashboard() {
         const r = await diagnosisFn({
           data: {
             venueName: activeVenue.name,
-            audits: audits.map((a) => ({
+            audits: cappedAudits.map((a) => ({
               audit_date: a.audit_date,
               shift: a.shift,
               problem_category: a.problem_category,
               diagnosis_type: a.diagnosis_type,
-              estimated_loss_eur: (a as { is_positive?: boolean }).is_positive
-                ? 0
-                : a.estimated_loss_eur,
+              estimated_loss_eur: a.observation_type === "negative" ? a.capped_loss_eur : 0,
               bsps_solution: a.bsps_solution,
               bottleneck: a.bottleneck,
-              is_positive: Boolean((a as { is_positive?: boolean }).is_positive),
+              is_positive: a.observation_type === "positive",
+              observation_type: a.observation_type,
+              experience_impact: a.experience_impact ?? undefined,
             })),
             severity: {
               level: severity.level,

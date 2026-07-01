@@ -7,6 +7,8 @@ import {
   type VenueProfile,
 } from "./constants";
 
+const EMOTIONAL_PLACEHOLDER_STEPS = "1. Καταγράψτε την αίσθηση που άφησε αυτή η στιγμή στον πελάτη — τι θα θυμάται φεύγοντας.\n2. Συζητήστε στο pre-shift πώς αυτή η στιγμή επηρεάζει το Peak-End της βραδιάς.\n3. Ενισχύστε τη συμπεριφορά ή διορθώστε την πηγή της, ώστε η τελευταία ανάμνηση του πελάτη να είναι θετική.";
+
 const AUDIT_COLS =
   "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, is_walkout, bsps_solution, actionable_steps, delay_minutes, affected_covers, created_at";
 

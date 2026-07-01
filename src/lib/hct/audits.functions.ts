@@ -112,6 +112,8 @@ const CreateInput = z.object({
   diagnosis_type: z.enum(["structure", "emotion", "both"]),
   estimated_loss_eur: z.number().nonnegative(),
   is_positive: z.boolean().default(false),
+  observation_type: z.enum(["negative", "positive", "emotional"]).default("negative"),
+  experience_impact: z.enum(["high", "medium", "low"]).nullable().optional(),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
   delay_minutes: z.number().nonnegative().default(5),
@@ -134,7 +136,7 @@ export const createAudit = createServerFn({ method: "POST" })
 
     const enforced = enforceServerSide(
       data.problem_category,
-      data.is_positive,
+      data.observation_type,
       { delay_minutes: data.delay_minutes, affected_covers: data.affected_covers, is_walkout: data.is_walkout },
       data.actionable_steps,
       rowToProfile(venueRow as VenueProfileRow),

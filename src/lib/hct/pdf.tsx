@@ -129,11 +129,11 @@ export async function downloadExecutiveReport(
     doc.setDrawColor(220);
     doc.setLineWidth(0.5);
     doc.rect(x, y, kpiW, kpiH);
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setTextColor(140);
     doc.setFont(FONT_FAMILY, "normal");
     doc.text(k.label, x + 10, y + 16);
-    doc.setFontSize(18);
+    doc.setFontSize(i === 2 ? 15 : 18);
     doc.setTextColor(13, 27, 42);
     doc.setFont(FONT_FAMILY, "bold");
     doc.text(k.value, x + 10, y + 44);

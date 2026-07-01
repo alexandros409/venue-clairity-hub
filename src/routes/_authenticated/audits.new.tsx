@@ -164,13 +164,15 @@ function NewAudit() {
           bottleneck: form.bottleneck,
           problem_category: form.problem_category,
           diagnosis_type: form.diagnosis_type as "structure" | "emotion" | "both",
-          estimated_loss_eur: form.is_positive ? 0 : Math.round(computedLoss),
-          is_positive: form.is_positive,
+          estimated_loss_eur: isNegative ? Math.round(computedLoss) : 0,
+          is_positive: isPositive,
+          observation_type: form.observation_type,
+          experience_impact: isEmotional ? form.experience_impact : null,
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
           delay_minutes: Number(form.delay_minutes) || 0,
           affected_covers: Number(form.affected_covers) || 0,
-          is_walkout: form.is_walkout && !form.is_positive,
+          is_walkout: form.is_walkout && isNegative,
 
         },
       });

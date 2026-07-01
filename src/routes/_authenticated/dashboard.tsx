@@ -93,11 +93,11 @@ function Dashboard() {
   const capped = useMemo(
     () =>
       applySafetyCap(
-        audits.map((a) =>
-          (a as { is_positive?: boolean }).is_positive
-            ? 0
-            : Number(a.estimated_loss_eur || 0),
-        ),
+        audits.map((a) => {
+          const t = (a as { observation_type?: string; is_positive?: boolean }).observation_type
+            ?? ((a as { is_positive?: boolean }).is_positive ? "positive" : "negative");
+          return t === "negative" ? Number(a.estimated_loss_eur || 0) : 0;
+        }),
         venueProfile,
       ),
     [audits, venueProfile],
@@ -106,31 +106,41 @@ function Dashboard() {
   const cappedAudits = useMemo(
     () =>
       audits.map((a, i) => {
-        const positive = Boolean((a as { is_positive?: boolean }).is_positive);
+        const obsType = ((a as { observation_type?: string }).observation_type
+          ?? ((a as { is_positive?: boolean }).is_positive ? "positive" : "negative")) as
+          "negative" | "positive" | "emotional";
+        const positive = obsType === "positive";
+        const emotional = obsType === "emotional";
         return {
           ...a,
+          observation_type: obsType,
+          experience_impact:
+            (a as { experience_impact?: "high" | "medium" | "low" | null }).experience_impact
+            ?? null,
           is_positive: positive,
-          capped_loss_eur: positive
-            ? 0
-            : Math.round(capped.capped[i] ?? Number(a.estimated_loss_eur || 0)),
+          capped_loss_eur:
+            positive || emotional
+              ? 0
+              : Math.round(capped.capped[i] ?? Number(a.estimated_loss_eur || 0)),
         };
       }),
     [audits, capped],
   );
 
   const totals = useMemo(() => {
-    const struct = audits.filter((a) => a.diagnosis_type !== "emotion").length;
-    const emo = audits.filter((a) => a.diagnosis_type !== "structure").length;
-    const denom = struct + emo || 1;
+    const structural = cappedAudits.filter((a) => a.observation_type === "negative").length;
+    const emotional = cappedAudits.filter((a) => a.observation_type === "positive").length;
+    const experiential = cappedAudits.filter((a) => a.observation_type === "emotional").length;
     return {
       count: audits.length,
       total: Math.round(capped.capped_total),
       raw_total: Math.round(capped.total),
       capped: capped.capped_total < capped.total,
-      structPct: Math.round((struct / denom) * 100),
-      emoPct: Math.round((emo / denom) * 100),
+      structural,
+      emotional,
+      experiential,
     };
-  }, [audits, capped]);
+  }, [audits, capped, cappedAudits]);
 
   const severity = useMemo(
     () => computeSeverity(cappedAudits, capped.capped_total, economics),

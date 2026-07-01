@@ -34,6 +34,8 @@ type Audit = {
   diagnosis_type: string;
   estimated_loss_eur: number | string;
   is_positive?: boolean;
+  observation_type?: "negative" | "positive" | "emotional" | string;
+  experience_impact?: "high" | "medium" | "low" | null;
   bsps_solution: string;
   actionable_steps?: string;
 };

@@ -66,11 +66,16 @@ function NewAudit() {
     estimated_loss_eur: "" as string | number,
     bsps_solution: "",
     actionable_steps: "",
-    is_positive: false,
+    observation_type: "negative" as ObservationType,
+    experience_impact: "medium" as ExperienceImpact,
     is_walkout: false,
     delay_minutes: String(DEFAULT_OBS_METRICS.delay_minutes),
     affected_covers: String(DEFAULT_OBS_METRICS.affected_covers),
   });
+
+  const isPositive = form.observation_type === "positive";
+  const isEmotional = form.observation_type === "emotional";
+  const isNegative = form.observation_type === "negative";
 
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -94,10 +99,10 @@ function NewAudit() {
     is_walkout: form.is_walkout,
   };
 
-  const rawLoss = profileOk && form.problem_category
+  const rawLoss = profileOk && form.problem_category && isNegative
     ? lossForCategory(form.problem_category, venueProfile, obsMetrics)
     : 0;
-  const computedLoss = form.is_positive ? 0 : rawLoss;
+  const computedLoss = isNegative ? rawLoss : 0;
 
   function patch<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -111,14 +116,19 @@ function NewAudit() {
     setAnalyzing(true);
     try {
       const r = await analyzeFn({
-        data: { bottleneck: form.bottleneck, is_positive: form.is_positive },
+        data: {
+          bottleneck: form.bottleneck,
+          observation_type: form.observation_type,
+          experience_impact: isEmotional ? form.experience_impact : undefined,
+          is_positive: isPositive,
+        },
       });
       setForm((f) => ({
         ...f,
         problem_category: r.problem_category,
         diagnosis_type: r.diagnosis_type,
         bsps_solution: r.bsps_solution,
-        actionable_steps: f.is_positive
+        actionable_steps: isPositive
           ? POSITIVE_REINFORCEMENT_TEXT
           : r.actionable_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"),
       }));
@@ -130,18 +140,16 @@ function NewAudit() {
     }
   }
 
-  // When user toggles Positive, replace stale corrective steps with the
-  // canonical reinforcement template so positive entries never carry over
-  // a corrective protocol from a previous AI run.
-  function setPositive(v: boolean) {
+  function setObservationType(t: ObservationType) {
     setForm((f) => ({
       ...f,
-      is_positive: v,
-      actionable_steps: v
-        ? POSITIVE_REINFORCEMENT_TEXT
-        : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
-          ? ""
-          : f.actionable_steps,
+      observation_type: t,
+      actionable_steps:
+        t === "positive"
+          ? POSITIVE_REINFORCEMENT_TEXT
+          : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
+            ? ""
+            : f.actionable_steps,
     }));
   }
 

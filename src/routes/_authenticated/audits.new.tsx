@@ -484,15 +484,17 @@ function NewAudit() {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Computed Loss (€ / incident)">
               <div className="tabular flex h-11 items-center rounded-sm border border-hairline bg-muted/40 px-3 text-sm font-medium">
-                {form.is_positive
+                {isPositive
                   ? <span className="text-emerald-700">Positive Observation · €0</span>
-                  : profileOk && form.problem_category
-                    ? formatEUR(Math.round(computedLoss))
-                    : "—"}
+                  : isEmotional
+                    ? <span className="text-indigo-700">Emotional · Impact {form.experience_impact.toUpperCase()} · €0</span>
+                    : profileOk && form.problem_category
+                      ? formatEUR(Math.round(computedLoss))
+                      : "—"}
               </div>
               <p className="mt-1 text-[10px] text-muted-foreground">
-                {form.is_positive
-                  ? "Positive observations carry no financial loss."
+                {isPositive || isEmotional
+                  ? "This observation carries no direct financial loss."
                   : "Auto-calculated from venue profile + category. A concept-specific safety cap is applied on the dashboard total."}
               </p>
             </Field>

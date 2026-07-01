@@ -55,12 +55,19 @@ export async function downloadExecutiveReport(
   const tableWidth = pageWidth - margin * 2;
   const col6Width = tableWidth - (55 + 65 + 100 + 85 + 60 + 55);
 
+  const obsTypeOf = (a: Audit): "negative" | "positive" | "emotional" => {
+    if (a.observation_type === "positive" || a.observation_type === "emotional" || a.observation_type === "negative") {
+      return a.observation_type;
+    }
+    return a.is_positive ? "positive" : "negative";
+  };
   const totalLoss = audits.reduce(
-    (a, b) => a + Number(b.estimated_loss_eur || 0),
+    (acc, b) => acc + (obsTypeOf(b) === "negative" ? Number(b.estimated_loss_eur || 0) : 0),
     0,
   );
-  const struct = audits.filter((a) => a.diagnosis_type !== "emotion").length;
-  const emo = audits.filter((a) => a.diagnosis_type !== "structure").length;
+  const structural = audits.filter((a) => obsTypeOf(a) === "negative").length;
+  const emotional = audits.filter((a) => obsTypeOf(a) === "positive").length;
+  const experiential = audits.filter((a) => obsTypeOf(a) === "emotional").length;
   const dates = audits.map((a) => a.audit_date).sort();
   const range =
     dates.length === 0

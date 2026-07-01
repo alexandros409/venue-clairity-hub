@@ -76,6 +76,16 @@ function AuditDetail() {
 
   useEffect(() => {
     if (q.data && !form) {
+      const rawObs = (q.data as { observation_type?: string; is_positive?: boolean }).observation_type;
+      const obs: ObservationType =
+        rawObs === "positive" || rawObs === "emotional" || rawObs === "negative"
+          ? rawObs
+          : (q.data as { is_positive?: boolean }).is_positive
+            ? "positive"
+            : "negative";
+      const rawImp = (q.data as { experience_impact?: string | null }).experience_impact;
+      const imp: ExperienceImpact =
+        rawImp === "high" || rawImp === "medium" || rawImp === "low" ? rawImp : "medium";
       setForm({
         venue_id: q.data.venue_id,
         audit_date: q.data.audit_date,
@@ -86,7 +96,8 @@ function AuditDetail() {
         estimated_loss_eur: String(q.data.estimated_loss_eur ?? ""),
         bsps_solution: q.data.bsps_solution ?? "",
         actionable_steps: q.data.actionable_steps ?? "",
-        is_positive: Boolean((q.data as { is_positive?: boolean }).is_positive ?? false),
+        observation_type: obs,
+        experience_impact: imp,
         is_walkout: Boolean((q.data as { is_walkout?: boolean }).is_walkout ?? false),
         delay_minutes: String(
           (q.data as { delay_minutes?: number | string | null }).delay_minutes
@@ -104,6 +115,10 @@ function AuditDetail() {
   function patch<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm((f) => (f ? { ...f, [k]: v } : f));
   }
+
+  const isPositive = form?.observation_type === "positive";
+  const isEmotional = form?.observation_type === "emotional";
+  const isNegative = form?.observation_type === "negative";
 
   const activeVenue = (venuesQ.data ?? []).find((v) => v.id === form?.venue_id);
   const venueProfile = activeVenue
@@ -127,22 +142,23 @@ function AuditDetail() {
       }
     : undefined;
 
-  const rawLoss = profileOk && form?.problem_category
+  const rawLoss = profileOk && form?.problem_category && isNegative
     ? lossForCategory(form.problem_category, venueProfile, obsMetrics)
     : 0;
-  const computedLoss = form?.is_positive ? 0 : rawLoss;
+  const computedLoss = isNegative ? rawLoss : 0;
 
-  function setPositive(v: boolean) {
+  function setObservationType(t: ObservationType) {
     setForm((f) =>
       f
         ? {
             ...f,
-            is_positive: v,
-            actionable_steps: v
-              ? POSITIVE_REINFORCEMENT_TEXT
-              : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
-                ? ""
-                : f.actionable_steps,
+            observation_type: t,
+            actionable_steps:
+              t === "positive"
+                ? POSITIVE_REINFORCEMENT_TEXT
+                : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
+                  ? ""
+                  : f.actionable_steps,
           }
         : f,
     );
@@ -160,13 +176,15 @@ function AuditDetail() {
           bottleneck: form.bottleneck,
           problem_category: form.problem_category,
           diagnosis_type: form.diagnosis_type as "structure" | "emotion" | "both",
-          estimated_loss_eur: form.is_positive ? 0 : Math.round(computedLoss),
-          is_positive: form.is_positive,
+          estimated_loss_eur: isNegative ? Math.round(computedLoss) : 0,
+          is_positive: isPositive,
+          observation_type: form.observation_type,
+          experience_impact: isEmotional ? form.experience_impact : null,
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
           delay_minutes: Number(form.delay_minutes) || 0,
           affected_covers: Number(form.affected_covers) || 0,
-          is_walkout: form.is_walkout && !form.is_positive,
+          is_walkout: form.is_walkout && isNegative,
 
         },
       });

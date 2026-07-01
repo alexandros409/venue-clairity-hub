@@ -377,8 +377,12 @@ function Dashboard() {
                             </Link>
                           </td>
                           <td className="tabular px-2 py-2 text-right font-medium sm:px-4">
-                            {a.is_positive ? (
-                              <span className="text-emerald-700">€0</span>
+                            {a.observation_type === "positive" ? (
+                              <span className="text-emerald-700">Positive</span>
+                            ) : a.observation_type === "emotional" ? (
+                              <span className="text-indigo-700">
+                                Exp · {(a.experience_impact ?? "med").toUpperCase()}
+                              </span>
                             ) : (
                               formatEUR(a.capped_loss_eur)
                             )}

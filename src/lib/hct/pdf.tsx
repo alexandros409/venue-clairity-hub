@@ -34,6 +34,8 @@ type Audit = {
   diagnosis_type: string;
   estimated_loss_eur: number | string;
   is_positive?: boolean;
+  observation_type?: "negative" | "positive" | "emotional" | string;
+  experience_impact?: "high" | "medium" | "low" | null;
   bsps_solution: string;
   actionable_steps?: string;
 };
@@ -53,12 +55,19 @@ export async function downloadExecutiveReport(
   const tableWidth = pageWidth - margin * 2;
   const col6Width = tableWidth - (55 + 65 + 100 + 85 + 60 + 55);
 
+  const obsTypeOf = (a: Audit): "negative" | "positive" | "emotional" => {
+    if (a.observation_type === "positive" || a.observation_type === "emotional" || a.observation_type === "negative") {
+      return a.observation_type;
+    }
+    return a.is_positive ? "positive" : "negative";
+  };
   const totalLoss = audits.reduce(
-    (a, b) => a + Number(b.estimated_loss_eur || 0),
+    (acc, b) => acc + (obsTypeOf(b) === "negative" ? Number(b.estimated_loss_eur || 0) : 0),
     0,
   );
-  const struct = audits.filter((a) => a.diagnosis_type !== "emotion").length;
-  const emo = audits.filter((a) => a.diagnosis_type !== "structure").length;
+  const structural = audits.filter((a) => obsTypeOf(a) === "negative").length;
+  const emotional = audits.filter((a) => obsTypeOf(a) === "positive").length;
+  const experiential = audits.filter((a) => obsTypeOf(a) === "emotional").length;
   const dates = audits.map((a) => a.audit_date).sort();
   const range =
     dates.length === 0
@@ -110,18 +119,21 @@ export async function downloadExecutiveReport(
   const kpis = [
     { label: "TOTAL OBSERVATIONS", value: String(audits.length) },
     { label: "AUDITED FINANCIAL LOSS", value: formatEUR(totalLoss) },
-    { label: "STRUCTURAL / EMOTIONAL", value: `${struct} / ${emo}` },
+    {
+      label: "STRUCTURAL / EMOTIONAL / EXPERIENTIAL",
+      value: `${structural} / ${emotional} / ${experiential}`,
+    },
   ];
   kpis.forEach((k, i) => {
     const x = margin + i * (kpiW + 10);
     doc.setDrawColor(220);
     doc.setLineWidth(0.5);
     doc.rect(x, y, kpiW, kpiH);
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setTextColor(140);
     doc.setFont(FONT_FAMILY, "normal");
     doc.text(k.label, x + 10, y + 16);
-    doc.setFontSize(18);
+    doc.setFontSize(i === 2 ? 15 : 18);
     doc.setTextColor(13, 27, 42);
     doc.setFont(FONT_FAMILY, "bold");
     doc.text(k.value, x + 10, y + 44);
@@ -227,16 +239,25 @@ export async function downloadExecutiveReport(
   const cleanSteps = (s?: string) =>
     (s ?? "").replace(/\s+/g, " ").trim();
 
-  const rows = audits.map((a) => [
-    formatDate(a.audit_date),
-    labelOf(SHIFTS, a.shift || "") || "—",
-    (labelOf(PROBLEM_CATEGORIES, a.problem_category || "") || "—") +
-      (isFohImpactCategory(a.problem_category) ? `\n${FOH_IMPACT_DISCLAIMER}` : ""),
-    labelOf(DIAGNOSIS_TYPES, a.diagnosis_type || "") || "—",
-    a.is_positive ? "Positive Observation" : formatEUR(Number(a.estimated_loss_eur ?? 0)),
-    (labelOf(BSPS_SOLUTIONS, a.bsps_solution || "") || "").split(" — ")[0] || "—",
-    cleanSteps(a.actionable_steps) || "—",
-  ]);
+  const rows = audits.map((a) => {
+    const t = obsTypeOf(a);
+    const financialCell =
+      t === "positive"
+        ? "Positive Observation"
+        : t === "emotional"
+          ? `Emotional Impact\n${(a.experience_impact ?? "medium").toString().toUpperCase()}`
+          : formatEUR(Number(a.estimated_loss_eur ?? 0));
+    return [
+      formatDate(a.audit_date),
+      labelOf(SHIFTS, a.shift || "") || "—",
+      (labelOf(PROBLEM_CATEGORIES, a.problem_category || "") || "—") +
+        (isFohImpactCategory(a.problem_category) ? `\n${FOH_IMPACT_DISCLAIMER}` : ""),
+      labelOf(DIAGNOSIS_TYPES, a.diagnosis_type || "") || "—",
+      financialCell,
+      (labelOf(BSPS_SOLUTIONS, a.bsps_solution || "") || "").split(" — ")[0] || "—",
+      cleanSteps(a.actionable_steps) || "—",
+    ];
+  });
 
   autoTable(doc, {
     startY: y + 4,

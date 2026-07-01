@@ -25,9 +25,11 @@ export type Database = {
           delay_minutes: number
           diagnosis_type: string
           estimated_loss_eur: number
+          experience_impact: string | null
           id: string
           is_positive: boolean
           is_walkout: boolean
+          observation_type: string
           owner_id: string
           problem_category: string
           shift: string
@@ -43,9 +45,11 @@ export type Database = {
           delay_minutes?: number
           diagnosis_type: string
           estimated_loss_eur?: number
+          experience_impact?: string | null
           id?: string
           is_positive?: boolean
           is_walkout?: boolean
+          observation_type?: string
           owner_id: string
           problem_category: string
           shift: string
@@ -61,9 +65,11 @@ export type Database = {
           delay_minutes?: number
           diagnosis_type?: string
           estimated_loss_eur?: number
+          experience_impact?: string | null
           id?: string
           is_positive?: boolean
           is_walkout?: boolean
+          observation_type?: string
           owner_id?: string
           problem_category?: string
           shift?: string

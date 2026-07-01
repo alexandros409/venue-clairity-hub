@@ -93,11 +93,11 @@ function Dashboard() {
   const capped = useMemo(
     () =>
       applySafetyCap(
-        audits.map((a) =>
-          (a as { is_positive?: boolean }).is_positive
-            ? 0
-            : Number(a.estimated_loss_eur || 0),
-        ),
+        audits.map((a) => {
+          const t = (a as { observation_type?: string; is_positive?: boolean }).observation_type
+            ?? ((a as { is_positive?: boolean }).is_positive ? "positive" : "negative");
+          return t === "negative" ? Number(a.estimated_loss_eur || 0) : 0;
+        }),
         venueProfile,
       ),
     [audits, venueProfile],
@@ -106,31 +106,41 @@ function Dashboard() {
   const cappedAudits = useMemo(
     () =>
       audits.map((a, i) => {
-        const positive = Boolean((a as { is_positive?: boolean }).is_positive);
+        const obsType = ((a as { observation_type?: string }).observation_type
+          ?? ((a as { is_positive?: boolean }).is_positive ? "positive" : "negative")) as
+          "negative" | "positive" | "emotional";
+        const positive = obsType === "positive";
+        const emotional = obsType === "emotional";
         return {
           ...a,
+          observation_type: obsType,
+          experience_impact:
+            (a as { experience_impact?: "high" | "medium" | "low" | null }).experience_impact
+            ?? null,
           is_positive: positive,
-          capped_loss_eur: positive
-            ? 0
-            : Math.round(capped.capped[i] ?? Number(a.estimated_loss_eur || 0)),
+          capped_loss_eur:
+            positive || emotional
+              ? 0
+              : Math.round(capped.capped[i] ?? Number(a.estimated_loss_eur || 0)),
         };
       }),
     [audits, capped],
   );
 
   const totals = useMemo(() => {
-    const struct = audits.filter((a) => a.diagnosis_type !== "emotion").length;
-    const emo = audits.filter((a) => a.diagnosis_type !== "structure").length;
-    const denom = struct + emo || 1;
+    const structural = cappedAudits.filter((a) => a.observation_type === "negative").length;
+    const emotional = cappedAudits.filter((a) => a.observation_type === "positive").length;
+    const experiential = cappedAudits.filter((a) => a.observation_type === "emotional").length;
     return {
       count: audits.length,
       total: Math.round(capped.capped_total),
       raw_total: Math.round(capped.total),
       capped: capped.capped_total < capped.total,
-      structPct: Math.round((struct / denom) * 100),
-      emoPct: Math.round((emo / denom) * 100),
+      structural,
+      emotional,
+      experiential,
     };
-  }, [audits, capped]);
+  }, [audits, capped, cappedAudits]);
 
   const severity = useMemo(
     () => computeSeverity(cappedAudits, capped.capped_total, economics),
@@ -156,17 +166,17 @@ function Dashboard() {
         const r = await diagnosisFn({
           data: {
             venueName: activeVenue.name,
-            audits: audits.map((a) => ({
+            audits: cappedAudits.map((a) => ({
               audit_date: a.audit_date,
               shift: a.shift,
               problem_category: a.problem_category,
               diagnosis_type: a.diagnosis_type,
-              estimated_loss_eur: (a as { is_positive?: boolean }).is_positive
-                ? 0
-                : a.estimated_loss_eur,
+              estimated_loss_eur: a.observation_type === "negative" ? a.capped_loss_eur : 0,
               bsps_solution: a.bsps_solution,
               bottleneck: a.bottleneck,
-              is_positive: Boolean((a as { is_positive?: boolean }).is_positive),
+              is_positive: a.observation_type === "positive",
+              observation_type: a.observation_type,
+              experience_impact: a.experience_impact ?? undefined,
             })),
             severity: {
               level: severity.level,
@@ -293,14 +303,11 @@ function Dashboard() {
                     accent
                   />
                   <MiniStat
-                    label="Struct · Emo"
-                    value={`${totals.structPct}/${totals.emoPct}`}
-                  >
-                    <div className="mt-2 flex h-1 overflow-hidden rounded-sm bg-muted">
-                      <div className="bg-foreground" style={{ width: `${totals.structPct}%` }} />
-                      <div className="bg-gold" style={{ width: `${totals.emoPct}%` }} />
-                    </div>
-                  </MiniStat>
+                    label="Str · Emo · Exp"
+                    value={`${totals.structural}/${totals.emotional}/${totals.experiential}`}
+                    hint="Structural / Emotional / Experiential"
+                  />
+
                   <MiniStat
                     label="Max Loss Cap"
                     value={formatEUR(Math.round(economics.max_total_loss))}
@@ -370,8 +377,12 @@ function Dashboard() {
                             </Link>
                           </td>
                           <td className="tabular px-2 py-2 text-right font-medium sm:px-4">
-                            {a.is_positive ? (
-                              <span className="text-emerald-700">€0</span>
+                            {a.observation_type === "positive" ? (
+                              <span className="text-emerald-700">Positive</span>
+                            ) : a.observation_type === "emotional" ? (
+                              <span className="text-indigo-700">
+                                Exp · {(a.experience_impact ?? "med").toUpperCase()}
+                              </span>
                             ) : (
                               formatEUR(a.capped_loss_eur)
                             )}

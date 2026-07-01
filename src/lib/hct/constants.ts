@@ -38,6 +38,20 @@ export const BSPS_SOLUTIONS = [
   { value: "BSPS-03", label: "BSPS-03 — Leadership Calibration" },
 ] as const;
 
+export const OBSERVATION_TYPES = [
+  { value: "negative", label: "Negative" },
+  { value: "positive", label: "Positive" },
+  { value: "emotional", label: "Emotional" },
+] as const;
+export type ObservationType = (typeof OBSERVATION_TYPES)[number]["value"];
+
+export const EXPERIENCE_IMPACTS = [
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
+] as const;
+export type ExperienceImpact = (typeof EXPERIENCE_IMPACTS)[number]["value"];
+
 export const CONCEPT_TYPES = [
   { value: "bar_canal", label: "Bar / Canal" },
   { value: "casual_dining", label: "Casual Dining" },

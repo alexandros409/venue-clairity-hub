@@ -7,8 +7,10 @@ import {
   type VenueProfile,
 } from "./constants";
 
+const EMOTIONAL_PLACEHOLDER_STEPS = "1. Καταγράψτε την αίσθηση που άφησε αυτή η στιγμή στον πελάτη — τι θα θυμάται φεύγοντας.\n2. Συζητήστε στο pre-shift πώς αυτή η στιγμή επηρεάζει το Peak-End της βραδιάς.\n3. Ενισχύστε τη συμπεριφορά ή διορθώστε την πηγή της, ώστε η τελευταία ανάμνηση του πελάτη να είναι θετική.";
+
 const AUDIT_COLS =
-  "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, is_walkout, bsps_solution, actionable_steps, delay_minutes, affected_covers, created_at";
+  "id, venue_id, audit_date, shift, bottleneck, problem_category, diagnosis_type, estimated_loss_eur, is_positive, is_walkout, observation_type, experience_impact, bsps_solution, actionable_steps, delay_minutes, affected_covers, created_at";
 
 const VENUE_PROFILE_COLS =
   "concept_type, tables, avg_covers_per_table, avg_check_per_person, cycles_per_shift";
@@ -45,15 +47,23 @@ function rowToProfile(row: VenueProfileRow): VenueProfile {
  */
 function enforceServerSide(
   category: string,
-  isPositive: boolean,
+  observation_type: "negative" | "positive" | "emotional",
   metrics: { delay_minutes: number; affected_covers: number; is_walkout: boolean },
   actionable_steps: string,
   venue: VenueProfile,
 ): { estimated_loss_eur: number; actionable_steps: string } {
-  if (isPositive) {
+  if (observation_type === "positive") {
     return {
       estimated_loss_eur: 0,
       actionable_steps: POSITIVE_REINFORCEMENT_TEXT,
+    };
+  }
+  if (observation_type === "emotional") {
+    return {
+      estimated_loss_eur: 0,
+      actionable_steps: actionable_steps?.trim()
+        ? actionable_steps
+        : EMOTIONAL_PLACEHOLDER_STEPS,
     };
   }
   const loss = lossForCategory(category, venue, metrics);
@@ -102,6 +112,8 @@ const CreateInput = z.object({
   diagnosis_type: z.enum(["structure", "emotion", "both"]),
   estimated_loss_eur: z.number().nonnegative(),
   is_positive: z.boolean().default(false),
+  observation_type: z.enum(["negative", "positive", "emotional"]).default("negative"),
+  experience_impact: z.enum(["high", "medium", "low"]).nullable().optional(),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
   delay_minutes: z.number().nonnegative().default(5),
@@ -124,7 +136,7 @@ export const createAudit = createServerFn({ method: "POST" })
 
     const enforced = enforceServerSide(
       data.problem_category,
-      data.is_positive,
+      data.observation_type,
       { delay_minutes: data.delay_minutes, affected_covers: data.affected_covers, is_walkout: data.is_walkout },
       data.actionable_steps,
       rowToProfile(venueRow as VenueProfileRow),
@@ -153,6 +165,8 @@ const UpdateInput = z.object({
   diagnosis_type: z.enum(["structure", "emotion", "both"]),
   estimated_loss_eur: z.number().nonnegative(),
   is_positive: z.boolean().default(false),
+  observation_type: z.enum(["negative", "positive", "emotional"]).default("negative"),
+  experience_impact: z.enum(["high", "medium", "low"]).nullable().optional(),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
   delay_minutes: z.number().nonnegative().default(5),
@@ -185,7 +199,7 @@ export const updateAudit = createServerFn({ method: "POST" })
 
     const enforced = enforceServerSide(
       patch.problem_category,
-      patch.is_positive,
+      patch.observation_type,
       { delay_minutes: patch.delay_minutes, affected_covers: patch.affected_covers, is_walkout: patch.is_walkout },
       patch.actionable_steps,
       rowToProfile(venueRow as VenueProfileRow),

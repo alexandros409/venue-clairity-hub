@@ -31,6 +31,9 @@ import {
   lossForCategory,
   DEFAULT_OBS_METRICS,
   POSITIVE_REINFORCEMENT_TEXT,
+  EXPERIENCE_IMPACTS,
+  type ObservationType,
+  type ExperienceImpact,
 } from "@/lib/hct/constants";
 import { Sparkles, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -63,11 +66,16 @@ function NewAudit() {
     estimated_loss_eur: "" as string | number,
     bsps_solution: "",
     actionable_steps: "",
-    is_positive: false,
+    observation_type: "negative" as ObservationType,
+    experience_impact: "medium" as ExperienceImpact,
     is_walkout: false,
     delay_minutes: String(DEFAULT_OBS_METRICS.delay_minutes),
     affected_covers: String(DEFAULT_OBS_METRICS.affected_covers),
   });
+
+  const isPositive = form.observation_type === "positive";
+  const isEmotional = form.observation_type === "emotional";
+  const isNegative = form.observation_type === "negative";
 
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -91,10 +99,10 @@ function NewAudit() {
     is_walkout: form.is_walkout,
   };
 
-  const rawLoss = profileOk && form.problem_category
+  const rawLoss = profileOk && form.problem_category && isNegative
     ? lossForCategory(form.problem_category, venueProfile, obsMetrics)
     : 0;
-  const computedLoss = form.is_positive ? 0 : rawLoss;
+  const computedLoss = isNegative ? rawLoss : 0;
 
   function patch<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -108,14 +116,19 @@ function NewAudit() {
     setAnalyzing(true);
     try {
       const r = await analyzeFn({
-        data: { bottleneck: form.bottleneck, is_positive: form.is_positive },
+        data: {
+          bottleneck: form.bottleneck,
+          observation_type: form.observation_type,
+          experience_impact: isEmotional ? form.experience_impact : undefined,
+          is_positive: isPositive,
+        },
       });
       setForm((f) => ({
         ...f,
         problem_category: r.problem_category,
         diagnosis_type: r.diagnosis_type,
         bsps_solution: r.bsps_solution,
-        actionable_steps: f.is_positive
+        actionable_steps: isPositive
           ? POSITIVE_REINFORCEMENT_TEXT
           : r.actionable_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"),
       }));
@@ -127,18 +140,16 @@ function NewAudit() {
     }
   }
 
-  // When user toggles Positive, replace stale corrective steps with the
-  // canonical reinforcement template so positive entries never carry over
-  // a corrective protocol from a previous AI run.
-  function setPositive(v: boolean) {
+  function setObservationType(t: ObservationType) {
     setForm((f) => ({
       ...f,
-      is_positive: v,
-      actionable_steps: v
-        ? POSITIVE_REINFORCEMENT_TEXT
-        : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
-          ? ""
-          : f.actionable_steps,
+      observation_type: t,
+      actionable_steps:
+        t === "positive"
+          ? POSITIVE_REINFORCEMENT_TEXT
+          : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
+            ? ""
+            : f.actionable_steps,
     }));
   }
 
@@ -153,13 +164,15 @@ function NewAudit() {
           bottleneck: form.bottleneck,
           problem_category: form.problem_category,
           diagnosis_type: form.diagnosis_type as "structure" | "emotion" | "both",
-          estimated_loss_eur: form.is_positive ? 0 : Math.round(computedLoss),
-          is_positive: form.is_positive,
+          estimated_loss_eur: isNegative ? Math.round(computedLoss) : 0,
+          is_positive: isPositive,
+          observation_type: form.observation_type,
+          experience_impact: isEmotional ? form.experience_impact : null,
           bsps_solution: form.bsps_solution,
           actionable_steps: form.actionable_steps,
           delay_minutes: Number(form.delay_minutes) || 0,
           affected_covers: Number(form.affected_covers) || 0,
-          is_walkout: form.is_walkout && !form.is_positive,
+          is_walkout: form.is_walkout && isNegative,
 
         },
       });
@@ -265,38 +278,71 @@ function NewAudit() {
             </Field>
           </div>
           <Field label="Observation Type">
-            <div className="inline-flex rounded-sm border border-hairline overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setPositive(false)}
-                className={`px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
-                  !form.is_positive
+            <div className="inline-flex flex-wrap rounded-sm border border-hairline overflow-hidden">
+              {(["negative", "positive", "emotional"] as const).map((t, i) => {
+                const active = form.observation_type === t;
+                const label = t === "negative" ? "Negative" : t === "positive" ? "Positive" : "Emotional";
+                const activeCls =
+                  t === "negative"
                     ? "bg-foreground text-background"
-                    : "bg-card text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                Negative
-              </button>
-              <button
-                type="button"
-                onClick={() => setPositive(true)}
-                className={`border-l border-hairline px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
-                  form.is_positive
-                    ? "bg-emerald-600 text-white"
-                    : "bg-card text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                Positive
-              </button>
+                    : t === "positive"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-indigo-600 text-white";
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setObservationType(t)}
+                    className={`${i > 0 ? "border-l border-hairline" : ""} px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                      active ? activeCls : "bg-card text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              {form.is_positive
-                ? "Positive observation — financial loss is fixed at €0 and excluded from the safety cap and Chief Diagnosis."
-                : "Negative observation — financial loss is auto-calculated from the category formula."}
+              {isPositive
+                ? "Positive observation — €0, excluded from safety cap and Chief Diagnosis loss."
+                : isEmotional
+                  ? "Emotional observation — €0 financial impact. Rated by Experience Impact (High / Medium / Low) instead."
+                  : "Negative observation — financial loss is auto-calculated from the category formula."}
             </p>
           </Field>
 
-          {!form.is_positive && (
+          {isEmotional && (
+            <Field label="Experience Impact">
+              <div className="inline-flex rounded-sm border border-hairline overflow-hidden">
+                {EXPERIENCE_IMPACTS.map((imp, i) => {
+                  const active = form.experience_impact === imp.value;
+                  const activeCls =
+                    imp.value === "high"
+                      ? "bg-red-600 text-white"
+                      : imp.value === "medium"
+                        ? "bg-amber-600 text-white"
+                        : "bg-slate-600 text-white";
+                  return (
+                    <button
+                      key={imp.value}
+                      type="button"
+                      onClick={() => patch("experience_impact", imp.value)}
+                      className={`${i > 0 ? "border-l border-hairline" : ""} px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                        active ? activeCls : "bg-card text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {imp.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Peak-End Rule: πόσο επηρεάζει την τελευταία ανάμνηση του πελάτη.
+              </p>
+            </Field>
+          )}
+
+          {isNegative && (
             <>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Affected Covers (this incident)">
@@ -438,15 +484,17 @@ function NewAudit() {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Computed Loss (€ / incident)">
               <div className="tabular flex h-11 items-center rounded-sm border border-hairline bg-muted/40 px-3 text-sm font-medium">
-                {form.is_positive
+                {isPositive
                   ? <span className="text-emerald-700">Positive Observation · €0</span>
-                  : profileOk && form.problem_category
-                    ? formatEUR(Math.round(computedLoss))
-                    : "—"}
+                  : isEmotional
+                    ? <span className="text-indigo-700">Emotional · Impact {form.experience_impact.toUpperCase()} · €0</span>
+                    : profileOk && form.problem_category
+                      ? formatEUR(Math.round(computedLoss))
+                      : "—"}
               </div>
               <p className="mt-1 text-[10px] text-muted-foreground">
-                {form.is_positive
-                  ? "Positive observations carry no financial loss."
+                {isPositive || isEmotional
+                  ? "This observation carries no direct financial loss."
                   : "Auto-calculated from venue profile + category. A concept-specific safety cap is applied on the dashboard total."}
               </p>
             </Field>

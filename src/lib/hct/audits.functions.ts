@@ -47,15 +47,23 @@ function rowToProfile(row: VenueProfileRow): VenueProfile {
  */
 function enforceServerSide(
   category: string,
-  isPositive: boolean,
+  observation_type: "negative" | "positive" | "emotional",
   metrics: { delay_minutes: number; affected_covers: number; is_walkout: boolean },
   actionable_steps: string,
   venue: VenueProfile,
 ): { estimated_loss_eur: number; actionable_steps: string } {
-  if (isPositive) {
+  if (observation_type === "positive") {
     return {
       estimated_loss_eur: 0,
       actionable_steps: POSITIVE_REINFORCEMENT_TEXT,
+    };
+  }
+  if (observation_type === "emotional") {
+    return {
+      estimated_loss_eur: 0,
+      actionable_steps: actionable_steps?.trim()
+        ? actionable_steps
+        : EMOTIONAL_PLACEHOLDER_STEPS,
     };
   }
   const loss = lossForCategory(category, venue, metrics);

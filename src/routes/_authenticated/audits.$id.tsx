@@ -289,38 +289,68 @@ function AuditDetail() {
               </div>
 
               <Field label="Observation Type">
-                <div className="inline-flex rounded-sm border border-hairline overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setPositive(false)}
-                    className={`px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
-                      !form.is_positive
+                <div className="inline-flex flex-wrap rounded-sm border border-hairline overflow-hidden">
+                  {(["negative", "positive", "emotional"] as const).map((t, i) => {
+                    const active = form.observation_type === t;
+                    const label = t === "negative" ? "Negative" : t === "positive" ? "Positive" : "Emotional";
+                    const activeCls =
+                      t === "negative"
                         ? "bg-foreground text-background"
-                        : "bg-card text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    Negative
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPositive(true)}
-                    className={`border-l border-hairline px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
-                      form.is_positive
-                        ? "bg-emerald-600 text-white"
-                        : "bg-card text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    Positive
-                  </button>
+                        : t === "positive"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-indigo-600 text-white";
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setObservationType(t)}
+                        className={`${i > 0 ? "border-l border-hairline" : ""} px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                          active ? activeCls : "bg-card text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
                 <p className="mt-1 text-[10px] text-muted-foreground">
-                  {form.is_positive
-                    ? "Positive observation — financial loss is fixed at €0 and excluded from the safety cap and Chief Diagnosis."
-                    : "Negative observation — financial loss is auto-calculated from the category formula and observation metrics."}
+                  {isPositive
+                    ? "Positive observation — €0, excluded from safety cap and Chief Diagnosis loss."
+                    : isEmotional
+                      ? "Emotional observation — €0. Rated by Experience Impact (High / Medium / Low)."
+                      : "Negative observation — financial loss is auto-calculated from the category formula and observation metrics."}
                 </p>
               </Field>
 
-              {!form.is_positive && (
+              {isEmotional && (
+                <Field label="Experience Impact">
+                  <div className="inline-flex rounded-sm border border-hairline overflow-hidden">
+                    {EXPERIENCE_IMPACTS.map((imp, i) => {
+                      const active = form.experience_impact === imp.value;
+                      const activeCls =
+                        imp.value === "high"
+                          ? "bg-red-600 text-white"
+                          : imp.value === "medium"
+                            ? "bg-amber-600 text-white"
+                            : "bg-slate-600 text-white";
+                      return (
+                        <button
+                          key={imp.value}
+                          type="button"
+                          onClick={() => patch("experience_impact", imp.value)}
+                          className={`${i > 0 ? "border-l border-hairline" : ""} px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                            active ? activeCls : "bg-card text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {imp.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+              )}
+
+              {isNegative && (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Affected Covers (this incident)">

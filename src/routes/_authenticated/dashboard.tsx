@@ -303,14 +303,11 @@ function Dashboard() {
                     accent
                   />
                   <MiniStat
-                    label="Struct · Emo"
-                    value={`${totals.structPct}/${totals.emoPct}`}
-                  >
-                    <div className="mt-2 flex h-1 overflow-hidden rounded-sm bg-muted">
-                      <div className="bg-foreground" style={{ width: `${totals.structPct}%` }} />
-                      <div className="bg-gold" style={{ width: `${totals.emoPct}%` }} />
-                    </div>
-                  </MiniStat>
+                    label="Str · Emo · Exp"
+                    value={`${totals.structural}/${totals.emotional}/${totals.experiential}`}
+                    hint="Structural / Emotional / Experiential"
+                  />
+
                   <MiniStat
                     label="Max Loss Cap"
                     value={formatEUR(Math.round(economics.max_total_loss))}

@@ -128,9 +128,9 @@ function NewAudit() {
         problem_category: r.problem_category,
         diagnosis_type: r.diagnosis_type,
         bsps_solution: r.bsps_solution,
-        actionable_steps: isPositive
-          ? POSITIVE_REINFORCEMENT_TEXT
-          : r.actionable_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"),
+        actionable_steps: r.actionable_steps
+          .map((s, i) => `${i + 1}. ${s}`)
+          .join("\n"),
       }));
       toast.success("AI diagnosis ready — review and edit before saving.");
     } catch (e) {
@@ -145,11 +145,7 @@ function NewAudit() {
       ...f,
       observation_type: t,
       actionable_steps:
-        t === "positive"
-          ? POSITIVE_REINFORCEMENT_TEXT
-          : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
-            ? ""
-            : f.actionable_steps,
+        f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT ? "" : f.actionable_steps,
     }));
   }
 

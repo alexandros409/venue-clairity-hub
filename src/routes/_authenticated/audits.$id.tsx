@@ -154,11 +154,9 @@ function AuditDetail() {
             ...f,
             observation_type: t,
             actionable_steps:
-              t === "positive"
-                ? POSITIVE_REINFORCEMENT_TEXT
-                : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
-                  ? ""
-                  : f.actionable_steps,
+              f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
+                ? ""
+                : f.actionable_steps,
           }
         : f,
     );

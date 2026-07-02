@@ -128,9 +128,9 @@ function NewAudit() {
         problem_category: r.problem_category,
         diagnosis_type: r.diagnosis_type,
         bsps_solution: r.bsps_solution,
-        actionable_steps: isPositive
-          ? POSITIVE_REINFORCEMENT_TEXT
-          : r.actionable_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"),
+        actionable_steps: r.actionable_steps
+          .map((s, i) => `${i + 1}. ${s}`)
+          .join("\n"),
       }));
       toast.success("AI diagnosis ready — review and edit before saving.");
     } catch (e) {
@@ -145,11 +145,7 @@ function NewAudit() {
       ...f,
       observation_type: t,
       actionable_steps:
-        t === "positive"
-          ? POSITIVE_REINFORCEMENT_TEXT
-          : f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT
-            ? ""
-            : f.actionable_steps,
+        f.actionable_steps === POSITIVE_REINFORCEMENT_TEXT ? "" : f.actionable_steps,
     }));
   }
 
@@ -459,8 +455,8 @@ function NewAudit() {
                   patch("diagnosis_type", v as "structure" | "emotion" | "both")
                 }
               >
-                <SelectTrigger className="h-11 rounded-sm border-hairline">
-                  <SelectValue placeholder="Select" />
+                <SelectTrigger className="h-11 rounded-sm border-hairline bg-muted/40">
+                  <SelectValue placeholder="Auto-detected by AI Audit" />
                 </SelectTrigger>
                 <SelectContent>
                   {DIAGNOSIS_TYPES.map((c) => (
@@ -470,6 +466,9 @@ function NewAudit() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Auto-filled by AI Audit based on the observation text. Override manually only if you disagree.
+              </p>
             </Field>
           </div>
 

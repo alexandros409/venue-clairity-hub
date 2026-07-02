@@ -455,8 +455,8 @@ function NewAudit() {
                   patch("diagnosis_type", v as "structure" | "emotion" | "both")
                 }
               >
-                <SelectTrigger className="h-11 rounded-sm border-hairline">
-                  <SelectValue placeholder="Select" />
+                <SelectTrigger className="h-11 rounded-sm border-hairline bg-muted/40">
+                  <SelectValue placeholder="Auto-detected by AI Audit" />
                 </SelectTrigger>
                 <SelectContent>
                   {DIAGNOSIS_TYPES.map((c) => (
@@ -466,6 +466,9 @@ function NewAudit() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Auto-filled by AI Audit based on the observation text. Override manually only if you disagree.
+              </p>
             </Field>
           </div>
 

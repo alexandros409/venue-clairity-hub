@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiTestAiRouteImport } from './routes/api/test-ai'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAuditsIndexRouteImport } from './routes/_authenticated/audits.index'
 import { Route as AuthenticatedAuditsNewRouteImport } from './routes/_authenticated/audits.new'
@@ -29,6 +30,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTestAiRoute = ApiTestAiRouteImport.update({
+  id: '/api/test-ai',
+  path: '/api/test-ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/test-ai': typeof ApiTestAiRoute
   '/audits/$id': typeof AuthenticatedAuditsIdRoute
   '/audits/new': typeof AuthenticatedAuditsNewRoute
   '/audits/': typeof AuthenticatedAuditsIndexRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/test-ai': typeof ApiTestAiRoute
   '/audits/$id': typeof AuthenticatedAuditsIdRoute
   '/audits/new': typeof AuthenticatedAuditsNewRoute
   '/audits': typeof AuthenticatedAuditsIndexRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/test-ai': typeof ApiTestAiRoute
   '/_authenticated/audits/$id': typeof AuthenticatedAuditsIdRoute
   '/_authenticated/audits/new': typeof AuthenticatedAuditsNewRoute
   '/_authenticated/audits/': typeof AuthenticatedAuditsIndexRoute
@@ -85,17 +94,26 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/api/test-ai'
     | '/audits/$id'
     | '/audits/new'
     | '/audits/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/audits/$id' | '/audits/new' | '/audits'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/api/test-ai'
+    | '/audits/$id'
+    | '/audits/new'
+    | '/audits'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/api/test-ai'
     | '/_authenticated/audits/$id'
     | '/_authenticated/audits/new'
     | '/_authenticated/audits/'
@@ -105,6 +123,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiTestAiRoute: typeof ApiTestAiRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -128,6 +147,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/test-ai': {
+      id: '/api/test-ai'
+      path: '/api/test-ai'
+      fullPath: '/api/test-ai'
+      preLoaderRoute: typeof ApiTestAiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -182,6 +208,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiTestAiRoute: ApiTestAiRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

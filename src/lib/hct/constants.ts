@@ -209,6 +209,7 @@ export type SeverityScore = {
   total_observations: number;
   positive_observations: number;
   negative_observations: number;
+  emotional_observations: number;
 };
 
 const SEVERITY_LABEL: Record<SeverityLevel, string> = {
@@ -226,14 +227,21 @@ const SEVERITY_LABEL: Record<SeverityLevel, string> = {
  *   - moderate : everything else
  */
 export function computeSeverity(
-  audits: ReadonlyArray<{ is_positive?: boolean | null }>,
+  audits: ReadonlyArray<{ is_positive?: boolean | null; observation_type?: string | null }>,
   totalCappedLoss: number,
   econ: VenueEconomics | null | undefined,
 ): SeverityScore {
   const total = audits.length;
-  const positive = audits.filter((a) => Boolean(a.is_positive)).length;
-  const negative = total - positive;
-  const positive_ratio = total > 0 ? positive / total : 0;
+  const positive = audits.filter((a) => {
+    const t = a.observation_type ?? (a.is_positive ? "positive" : "negative");
+    return t === "positive";
+  }).length;
+  const emotional = audits.filter((a) => {
+    const t = a.observation_type ?? (a.is_positive ? "positive" : "negative");
+    return t === "emotional";
+  }).length;
+  const negative = total - positive - emotional;
+  const positive_ratio = total > 0 ? (positive + emotional * 0.5) / total : 0;
   const ceiling = econ?.max_total_loss ?? 0;
   const loss_pct_of_ceiling = ceiling > 0 ? Math.min(100, (totalCappedLoss / ceiling) * 100) : 0;
 
@@ -257,6 +265,7 @@ export function computeSeverity(
     total_observations: total,
     positive_observations: positive,
     negative_observations: negative,
+    emotional_observations: emotional,
   };
 }
 

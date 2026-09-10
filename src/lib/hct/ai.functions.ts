@@ -199,7 +199,7 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
     ].join("\n");
 
     const { text } = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
+      model: gateway("google/gemini-3.1-pro-preview"),
       system,
       prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nObservation type: ${obsType.toUpperCase()}${obsType === "emotional" ? ` (experience_impact=${data.experience_impact ?? "medium"})` : ""}\nReturn the JSON object now.`,
     });
@@ -326,7 +326,7 @@ export const generateChiefDiagnosis = createServerFn({ method: "POST" })
     ].join("\n");
 
     const { text } = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
+      model: gateway("google/gemini-3.1-pro-preview"),
       system,
       prompt,
     });

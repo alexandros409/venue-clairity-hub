@@ -163,8 +163,8 @@ export type ObservationMetrics = {
 };
 
 export const DEFAULT_OBS_METRICS = {
-  delay_minutes: 5,
-  affected_covers: 4,
+  delay_minutes: 10,
+  affected_covers: 6,
   is_walkout: false,
 } as const;
 

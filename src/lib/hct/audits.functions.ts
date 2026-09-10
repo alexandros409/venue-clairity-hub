@@ -55,7 +55,7 @@ function enforceServerSide(
   if (observation_type === "positive") {
     return {
       estimated_loss_eur: 0,
-      actionable_steps: POSITIVE_REINFORCEMENT_TEXT,
+      actionable_steps: actionable_steps?.trim() ? actionable_steps : POSITIVE_REINFORCEMENT_TEXT,
     };
   }
   if (observation_type === "emotional") {
@@ -116,8 +116,8 @@ const CreateInput = z.object({
   experience_impact: z.enum(["high", "medium", "low"]).nullable().optional(),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
-  delay_minutes: z.number().nonnegative().default(5),
-  affected_covers: z.number().nonnegative().default(4),
+  delay_minutes: z.number().nonnegative().default(10),
+  affected_covers: z.number().nonnegative().default(6),
   is_walkout: z.boolean().default(false),
 
 });
@@ -169,8 +169,8 @@ const UpdateInput = z.object({
   experience_impact: z.enum(["high", "medium", "low"]).nullable().optional(),
   bsps_solution: z.string().min(1),
   actionable_steps: z.string().default(""),
-  delay_minutes: z.number().nonnegative().default(5),
-  affected_covers: z.number().nonnegative().default(4),
+  delay_minutes: z.number().nonnegative().default(10),
+  affected_covers: z.number().nonnegative().default(6),
   is_walkout: z.boolean().default(false),
 
 });

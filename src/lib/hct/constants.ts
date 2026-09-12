@@ -42,6 +42,7 @@ export const OBSERVATION_TYPES = [
   { value: "negative", label: "Negative" },
   { value: "positive", label: "Positive" },
   { value: "emotional", label: "Emotional" },
+  { value: "opportunity", label: "Opportunity" },
 ] as const;
 export type ObservationType = (typeof OBSERVATION_TYPES)[number]["value"];
 
@@ -210,6 +211,7 @@ export type SeverityScore = {
   positive_observations: number;
   negative_observations: number;
   emotional_observations: number;
+  opportunity_observations: number;
 };
 
 const SEVERITY_LABEL: Record<SeverityLevel, string> = {
@@ -240,8 +242,12 @@ export function computeSeverity(
     const t = a.observation_type ?? (a.is_positive ? "positive" : "negative");
     return t === "emotional";
   }).length;
-  const negative = total - positive - emotional;
-  const positive_ratio = total > 0 ? (positive + emotional * 0.5) / total : 0;
+  const opportunity = audits.filter((a) => {
+    const t = a.observation_type ?? (a.is_positive ? "positive" : "negative");
+    return t === "opportunity";
+  }).length;
+  const negative = total - positive - emotional - opportunity;
+  const positive_ratio = total > 0 ? (positive + (emotional + opportunity) * 0.5) / total : 0;
   const ceiling = econ?.max_total_loss ?? 0;
   const loss_pct_of_ceiling = ceiling > 0 ? Math.min(100, (totalCappedLoss / ceiling) * 100) : 0;
 
@@ -266,6 +272,7 @@ export function computeSeverity(
     positive_observations: positive,
     negative_observations: negative,
     emotional_observations: emotional,
+    opportunity_observations: opportunity,
   };
 }
 

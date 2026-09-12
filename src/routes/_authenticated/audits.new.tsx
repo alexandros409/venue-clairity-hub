@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { listVenues } from "@/lib/hct/venues.functions";
+import { listVenues, upsertVenueEstimate } from "@/lib/hct/venues.functions";
 import { createAudit } from "@/lib/hct/audits.functions";
 import { analyzeBottleneck } from "@/lib/hct/ai.functions";
 import {
@@ -32,6 +32,7 @@ import {
   DEFAULT_OBS_METRICS,
   POSITIVE_REINFORCEMENT_TEXT,
   EXPERIENCE_IMPACTS,
+  CONCEPT_TYPES,
   type ObservationType,
   type ExperienceImpact,
 } from "@/lib/hct/constants";
@@ -52,6 +53,8 @@ function NewAudit() {
   const listVenuesFn = useServerFn(listVenues);
   const createFn = useServerFn(createAudit);
   const analyzeFn = useServerFn(analyzeBottleneck);
+  const estimateFn = useServerFn(upsertVenueEstimate);
+  const queryClient = useQueryClient();
 
   const venuesQ = useQuery({ queryKey: ["venues"], queryFn: () => listVenuesFn() });
   const venues = venuesQ.data ?? [];
@@ -75,7 +78,11 @@ function NewAudit() {
 
   const isPositive = form.observation_type === "positive";
   const isEmotional = form.observation_type === "emotional";
+  const isOpportunity = form.observation_type === "opportunity";
   const isNegative = form.observation_type === "negative";
+
+  const [est, setEst] = useState({ concept_type: "", tables: "", covers_per_table: "2.5", check: "", cycles: "1.5" });
+  const [applyingEst, setApplyingEst] = useState(false);
 
   const [analyzing, setAnalyzing] = useState(false);
 

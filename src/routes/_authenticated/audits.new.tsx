@@ -252,6 +252,66 @@ function NewAudit() {
             </div>
           )}
 
+          {form.venue_id && !profileOk && (
+            <div className="rounded-sm border border-blue-200 bg-blue-50/40 p-4 space-y-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-blue-700 font-medium">Quick Estimate — Mystery Audit</p>
+                <p className="mt-1 text-xs text-muted-foreground">Enter what you observe on-site. Saved to venue profile for loss calculation.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Concept Type</label>
+                  <Select value={est.concept_type} onValueChange={(v) => setEst(e => ({ ...e, concept_type: v }))}>
+                    <SelectTrigger className="h-9 rounded-sm border-hairline mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>{CONCEPT_TYPES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Tables</label>
+                  <Input inputMode="decimal" value={est.tables} onChange={e => setEst(x => ({ ...x, tables: e.target.value }))} className="h-9 rounded-sm border-hairline mt-1" placeholder="e.g. 20" />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Avg Covers / Table</label>
+                  <Input inputMode="decimal" value={est.covers_per_table} onChange={e => setEst(x => ({ ...x, covers_per_table: e.target.value }))} className="h-9 rounded-sm border-hairline mt-1" />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Avg Check / Person (€)</label>
+                  <Input inputMode="decimal" value={est.check} onChange={e => setEst(x => ({ ...x, check: e.target.value }))} className="h-9 rounded-sm border-hairline mt-1" placeholder="e.g. 18" />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Cycles / Shift</label>
+                  <Input inputMode="decimal" value={est.cycles} onChange={e => setEst(x => ({ ...x, cycles: e.target.value }))} className="h-9 rounded-sm border-hairline mt-1" />
+                </div>
+              </div>
+              <Button
+                type="button"
+                disabled={applyingEst || !est.concept_type || !est.tables || !est.check}
+                onClick={async () => {
+                  setApplyingEst(true);
+                  try {
+                    await estimateFn({ data: {
+                      id: form.venue_id,
+                      concept_type: est.concept_type,
+                      tables: Number(est.tables),
+                      avg_covers_per_table: Number(est.covers_per_table),
+                      avg_check_per_person: Number(est.check),
+                      cycles_per_shift: Number(est.cycles),
+                    }});
+                    await queryClient.invalidateQueries({ queryKey: ["venues"] });
+                    toast.success("Estimate applied — loss calculation is now active.");
+                  } catch(e) {
+                    toast.error(e instanceof Error ? e.message : "Failed to apply estimate");
+                  } finally {
+                    setApplyingEst(false);
+                  }
+                }}
+                className="h-9 rounded-sm bg-blue-600 px-4 font-mono text-[10px] uppercase tracking-[0.2em] text-white hover:bg-blue-700"
+              >
+                {applyingEst ? "Applying…" : "Apply Estimate"}
+              </Button>
+            </div>
+          )}
+
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="Audit Date">
@@ -498,12 +558,14 @@ function NewAudit() {
                   ? <span className="text-emerald-700">Positive Observation · €0</span>
                   : isEmotional
                     ? <span className="text-indigo-700">Emotional · Impact {form.experience_impact.toUpperCase()} · €0</span>
-                    : profileOk && form.problem_category
-                      ? formatEUR(Math.round(computedLoss))
-                      : "—"}
+                    : isOpportunity
+                      ? <span className="text-blue-700">Opportunity · €0</span>
+                      : profileOk && form.problem_category
+                        ? formatEUR(Math.round(computedLoss))
+                        : "—"}
               </div>
               <p className="mt-1 text-[10px] text-muted-foreground">
-                {isPositive || isEmotional
+                {isPositive || isEmotional || isOpportunity
                   ? "This observation carries no direct financial loss."
                   : "Auto-calculated from venue profile + category. A concept-specific safety cap is applied on the dashboard total."}
               </p>

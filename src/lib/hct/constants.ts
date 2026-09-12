@@ -272,6 +272,7 @@ export function computeSeverity(
     positive_observations: positive,
     negative_observations: negative,
     emotional_observations: emotional,
+    opportunity_observations: opportunity,
   };
 }
 

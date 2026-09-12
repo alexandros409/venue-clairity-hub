@@ -246,7 +246,7 @@ const DiagnosisInput = z.object({
       bsps_solution: z.string(),
       bottleneck: z.string(),
       is_positive: z.boolean().optional(),
-      observation_type: z.enum(["negative", "positive", "emotional"]).optional(),
+      observation_type: z.enum(["negative", "positive", "emotional", "opportunity"]).optional(),
       experience_impact: z.enum(["high", "medium", "low"]).nullable().optional(),
     }),
   ),
@@ -257,6 +257,8 @@ const DiagnosisInput = z.object({
       loss_pct_of_ceiling: z.number(),
       positive_observations: z.number(),
       negative_observations: z.number(),
+      emotional_observations: z.number().optional(),
+      opportunity_observations: z.number().optional(),
     })
     .optional(),
 });
@@ -291,7 +293,10 @@ export const generateChiefDiagnosis = createServerFn({ method: "POST" })
           a.observation_type ??
           (a.is_positive ? "positive" : "negative");
         const tag =
-          t === "positive" ? "[POS]" : t === "emotional" ? `[EMO·${(a.experience_impact ?? "med").toUpperCase()}]` : "[NEG]";
+          t === "positive" ? "[POS]"
+          : t === "emotional" ? `[EMO·${(a.experience_impact ?? "med").toUpperCase()}]`
+          : t === "opportunity" ? "[OPP]"
+          : "[NEG]";
         return `${i + 1}. ${tag} [${a.audit_date} · ${a.shift}] cat=${a.problem_category} diag=${a.diagnosis_type} loss=${a.estimated_loss_eur}€ bsps=${a.bsps_solution} — ${a.bottleneck.slice(0, 240)}`;
       })
       .join("\n");
@@ -299,11 +304,13 @@ export const generateChiefDiagnosis = createServerFn({ method: "POST" })
     const severity = data.severity;
     const severityHint = (() => {
       if (!severity) return "Severity: unspecified. Κράτα ισορροπημένο τόνο.";
+      const lossPct = Math.round(severity.loss_pct_of_ceiling);
+      const ctx = `(απώλεια ${lossPct}% του revenue ceiling, ${severity.positive_observations} θετικές vs ${severity.negative_observations} αρνητικές παρατηρήσεις, συνολική απώλεια ${totalLoss}€)`;
       if (severity.level === "good")
-        return "Severity: GOOD. Ο τόνος να είναι ενθαρρυντικός, χαρούμενος αλλά προσγειωμένος.";
+        return `Severity: GOOD ${ctx}. Ο τόνος να είναι ενθαρρυντικός και προσγειωμένος. Αναφέρσου στα συγκεκριμένα θετικά που βρέθηκαν και πες γιατί έχουν αξία.`;
       if (severity.level === "moderate")
-        return "Severity: MODERATE. Ισορρόπησε αναγνώριση και στοχευμένη κριτική — χωρίς δραματικό ύφος.";
-      return "Severity: CRITICAL. Ο τόνος να είναι σταθερός και επείγον — αλλά ΠΟΤΕ επιθετικός ή απαξιωτικός. Πλαισίωσε ως συστημικές αστοχίες, όχι προσωπικά ελαττώματα.";
+        return `Severity: MODERATE ${ctx}. Ισορρόπησε αναγνώριση και στοχευμένη κριτική. Ονόμασε ρητά τις κατηγορίες που χρειάζονται δουλειά — χωρίς δραματικό ύφος.`;
+      return `Severity: CRITICAL ${ctx}. Ο τόνος σταθερός και επείγον — ΠΟΤΕ επιθετικός. Πλαισίωσε ως συστημικές αστοχίες, όχι προσωπικά ελαττώματα. Ονόμασε συγκεκριμένα ποιες κατηγορίες (π.χ. service_flow, leadership_boundaries) δημιουργούν τη μεγαλύτερη απώλεια.`;
     })();
 
     const system = [
@@ -320,7 +327,7 @@ export const generateChiefDiagnosis = createServerFn({ method: "POST" })
     ].join("\n");
 
     const severityLine = severity
-      ? `Overall severity: ${severity.level.toUpperCase()} (loss ${Math.round(severity.loss_pct_of_ceiling)}% of cap, ${severity.positive_observations} positive vs ${severity.negative_observations} negative observations)`
+      ? `Overall severity: ${severity.level.toUpperCase()} — loss ${Math.round(severity.loss_pct_of_ceiling)}% of revenue ceiling — observations: ${severity.positive_observations} positive, ${severity.negative_observations} negative, ${severity.emotional_observations ?? 0} emotional, ${severity.opportunity_observations ?? 0} opportunity — total financial loss: ${totalLoss}€`
       : "Overall severity: unspecified";
 
     const prompt = [

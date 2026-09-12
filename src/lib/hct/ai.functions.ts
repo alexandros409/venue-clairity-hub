@@ -12,7 +12,7 @@ const Input = z.object({
   bottleneck: z.string().min(4),
   language: z.enum(AI_OUTPUT_LANGUAGES).optional(),
   is_positive: z.boolean().optional(),
-  observation_type: z.enum(["negative", "positive", "emotional"]).optional(),
+  observation_type: z.enum(["negative", "positive", "emotional", "opportunity"]).optional(),
   experience_impact: z.enum(["high", "medium", "low"]).nullable().optional(),
 });
 
@@ -143,10 +143,20 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
       },
     });
 
-    const obsType: "negative" | "positive" | "emotional" =
+    const obsType: "negative" | "positive" | "emotional" | "opportunity" =
       data.observation_type ?? (data.is_positive ? "positive" : "negative");
 
     const stepsInstruction = (() => {
+      if (obsType === "opportunity") {
+        return [
+          "Πρόκειται για OPPORTUNITY observation — μια δύναμη/ευκαιρία που μπορεί να αξιοποιηθεί περαιτέρω, ΟΧΙ πρόβλημα.",
+          "Δώσε ακριβώς 3 σύντομες, ΜΟΝΑΔΙΚΕΣ προτάσεις στα Ελληνικά με ζεστή mentor γλώσσα που:",
+          "  (1) ονομάζουν ΣΥΓΚΕΚΡΙΜΕΝΑ τη δύναμη/ευκαιρία που περιγράφεται στο Bottleneck Observation και γιατί έχει αξία για τον πελάτη και την ομάδα,",
+          "  (2) προτείνουν πώς αυτή η συγκεκριμένη δύναμη μπορεί να γίνει συστηματικό πλεονέκτημα του venue (όχι γενικές φράσεις),",
+          "  (3) δίνουν ένα μικρό, εφαρμόσιμο βήμα ώστε η ευκαιρία να αξιοποιηθεί στην επόμενη βάρδια.",
+          "ΑΠΑΓΟΡΕΥΕΤΑΙ κάθε γενική/template φράση που θα ταίριαζε σε οποιαδήποτε άλλη παρατήρηση. Απόφυγε λέξεις: «πρόβλημα», «διορθώστε», «αδυναμία».",
+        ].join(" ");
+      }
       if (obsType === "positive") {
         return [
           "Πρόκειται για POSITIVE observation — ΟΧΙ πρόβλημα, αλλά κάτι που η ομάδα έκανε καλά.",
@@ -216,7 +226,7 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
       throw new Error("AI response was not a JSON object.");
     }
     const analysis = coerce(parsed as Record<string, unknown>);
-    if (obsType === "positive") {
+    if (obsType === "positive" || obsType === "opportunity") {
       analysis.bsps_solution = "BSPS-03";
     } else if (obsType === "emotional") {
       analysis.bsps_solution = "BSPS-02";

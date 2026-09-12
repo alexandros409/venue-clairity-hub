@@ -282,15 +282,17 @@ function NewAudit() {
           </div>
           <Field label="Observation Type">
             <div className="inline-flex flex-wrap rounded-sm border border-hairline overflow-hidden">
-              {(["negative", "positive", "emotional"] as const).map((t, i) => {
+              {(["negative", "positive", "emotional", "opportunity"] as const).map((t, i) => {
                 const active = form.observation_type === t;
-                const label = t === "negative" ? "Negative" : t === "positive" ? "Positive" : "Emotional";
+                const label = t === "negative" ? "Negative" : t === "positive" ? "Positive" : t === "emotional" ? "Emotional" : "Opportunity";
                 const activeCls =
                   t === "negative"
                     ? "bg-foreground text-background"
                     : t === "positive"
                       ? "bg-emerald-600 text-white"
-                      : "bg-indigo-600 text-white";
+                      : t === "emotional"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-blue-600 text-white";
                 return (
                   <button
                     key={t}
@@ -310,7 +312,9 @@ function NewAudit() {
                 ? "Positive observation — €0, excluded from safety cap and Chief Diagnosis loss."
                 : isEmotional
                   ? "Emotional observation — €0 financial impact. Rated by Experience Impact (High / Medium / Low) instead."
-                  : "Negative observation — financial loss is auto-calculated from the category formula."}
+                  : isOpportunity
+                    ? "Opportunity — a strength to leverage further. €0 financial impact."
+                    : "Negative observation — financial loss is auto-calculated from the category formula."}
             </p>
           </Field>
 

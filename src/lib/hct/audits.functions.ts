@@ -66,6 +66,12 @@ function enforceServerSide(
         : EMOTIONAL_PLACEHOLDER_STEPS,
     };
   }
+  if (observation_type === "opportunity") {
+    return {
+      estimated_loss_eur: 0,
+      actionable_steps: actionable_steps?.trim() ? actionable_steps : EMOTIONAL_PLACEHOLDER_STEPS,
+    };
+  }
   const loss = lossForCategory(category, venue, metrics);
   return {
     estimated_loss_eur: Math.max(0, Math.round(loss)),

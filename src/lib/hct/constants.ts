@@ -42,6 +42,7 @@ export const OBSERVATION_TYPES = [
   { value: "negative", label: "Negative" },
   { value: "positive", label: "Positive" },
   { value: "emotional", label: "Emotional" },
+  { value: "opportunity", label: "Opportunity" },
 ] as const;
 export type ObservationType = (typeof OBSERVATION_TYPES)[number]["value"];
 

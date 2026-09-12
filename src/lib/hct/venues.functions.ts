@@ -55,6 +55,30 @@ export const updateVenueProfile = createServerFn({ method: "POST" })
     return row;
   });
 
+const EstimateInput = z.object({
+  id: z.string().uuid(),
+  concept_type: z.string().min(1),
+  tables: z.number().int().positive(),
+  avg_covers_per_table: z.number().positive(),
+  avg_check_per_person: z.number().positive(),
+  cycles_per_shift: z.number().positive(),
+});
+
+export const upsertVenueEstimate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => EstimateInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { id, ...patch } = data;
+    const { data: row, error } = await context.supabase
+      .from("venues")
+      .update(patch)
+      .eq("id", id)
+      .select(VENUE_COLS)
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
 export const deleteVenue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))

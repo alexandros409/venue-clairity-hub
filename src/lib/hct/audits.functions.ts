@@ -47,7 +47,7 @@ function rowToProfile(row: VenueProfileRow): VenueProfile {
  */
 function enforceServerSide(
   category: string,
-  observation_type: "negative" | "positive" | "emotional",
+  observation_type: "negative" | "positive" | "emotional" | "opportunity",
   metrics: { delay_minutes: number; affected_covers: number; is_walkout: boolean },
   actionable_steps: string,
   venue: VenueProfile,

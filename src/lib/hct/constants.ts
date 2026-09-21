@@ -36,6 +36,8 @@ export const BSPS_SOLUTIONS = [
   { value: "BSPS-01", label: "BSPS-01 — Operational Re-Sequencing" },
   { value: "BSPS-02", label: "BSPS-02 — Service Boundary Reset" },
   { value: "BSPS-03", label: "BSPS-03 — Leadership Calibration" },
+  { value: "BSPS-04", label: "BSPS-04 — Guest Recovery Protocol" },
+  { value: "BSPS-05", label: "BSPS-05 — Revenue Leak Closure" },
 ] as const;
 
 export const OBSERVATION_TYPES = [
@@ -277,9 +279,9 @@ export function computeSeverity(
 }
 
 export const POSITIVE_REINFORCEMENT_STEPS = [
-  "Καταγράψτε αναλυτικά τα βήματα και τις συμπεριφορές της ομάδας που οδήγησαν στο θετικό αποτέλεσμα, ώστε να αποτυπωθούν ως πρότυπο καλής πρακτικής.",
-  "Επιβραβεύστε δημόσια τα μέλη της ομάδας που συνέβαλαν σε αυτή την εμπειρία, στο επόμενο pre-shift briefing.",
-  "Χρησιμοποιήστε την παρατήρηση ως εκπαιδευτικό case study στην επόμενη εσωτερική συνάντηση της ομάδας FOH.",
+  "Αναγνωρίστε αυτή τη στιγμή στην ομάδα — όχι γενικά, αλλά με το συγκεκριμένο πράγμα που έγινε καλά.",
+  "Επαναλάβετε τη συμπεριφορά σκόπιμα στην επόμενη βάρδια — κάντε την υπογραφή της ομάδας.",
+  "Δείτε πώς αυτή η στιγμή επηρέασε τον πελάτη — και χρησιμοποιήστε το ως αφορμή για συζήτηση Peak-End.",
 ] as const;
 
 export const POSITIVE_REINFORCEMENT_TEXT = POSITIVE_REINFORCEMENT_STEPS

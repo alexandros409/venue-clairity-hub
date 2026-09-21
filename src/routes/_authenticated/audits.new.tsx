@@ -341,7 +341,7 @@ function NewAudit() {
             </Field>
           </div>
           <Field label="Observation Type">
-            <div className="inline-flex flex-wrap rounded-sm border border-hairline overflow-hidden">
+            <div className="grid grid-cols-2 sm:grid-cols-4 rounded-sm border border-hairline overflow-hidden w-full">
               {(["negative", "positive", "emotional", "opportunity"] as const).map((t, i) => {
                 const active = form.observation_type === t;
                 const label = t === "negative" ? "Negative" : t === "positive" ? "Positive" : t === "emotional" ? "Emotional" : "Opportunity";
@@ -353,12 +353,13 @@ function NewAudit() {
                       : t === "emotional"
                         ? "bg-indigo-600 text-white"
                         : "bg-blue-600 text-white";
+                const borderCls = i === 1 ? "border-l border-hairline" : i === 2 ? "border-t border-hairline sm:border-t-0 sm:border-l border-hairline" : i === 3 ? "border-t border-hairline sm:border-t-0 border-l border-hairline" : "";
                 return (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setObservationType(t)}
-                    className={`${i > 0 ? "border-l border-hairline" : ""} px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition ${
+                    className={`${borderCls} px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] transition w-full ${
                       active ? activeCls : "bg-card text-muted-foreground hover:bg-muted"
                     }`}
                   >

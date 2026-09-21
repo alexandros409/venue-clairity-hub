@@ -14,6 +14,7 @@ const Input = z.object({
   is_positive: z.boolean().optional(),
   observation_type: z.enum(["negative", "positive", "emotional", "opportunity"]).optional(),
   experience_impact: z.enum(["high", "medium", "low"]).nullable().optional(),
+  venue_type: z.enum(["fine_dining", "casual_dining", "bar_canal", "hotel_restaurant"]).optional(),
 });
 
 const CATEGORIES = [
@@ -24,7 +25,7 @@ const CATEGORIES = [
   "leadership_boundaries",
 ] as const;
 const DIAGNOSES = ["structure", "emotion", "both"] as const;
-const BSPS = ["BSPS-01", "BSPS-02", "BSPS-03"] as const;
+const BSPS = ["BSPS-01", "BSPS-02", "BSPS-03", "BSPS-04", "BSPS-05"] as const;
 
 const AnalysisSchema = z.object({
   problem_category: z.enum(CATEGORIES),
@@ -58,6 +59,15 @@ const FOH_SCOPE = [
   "Ποτέ μην αναφέρεις: food cost, κουζίνα, BOH διαδικασίες, μαγειρική, συνταγές, προμηθευτές. Αν το πρόβλημα ξεκινά από κουζίνα, το αντιμετωπίζεις μόνο μέσα από τη FOH συνέπεια και την αντίδραση του σερβιτόρου.",
   "Πλαισίωσε αδυναμίες ως συστημικές (απούσα δομή, ασαφή πρωτόκολλα, μη ορισμένοι ρόλοι, έλλειψη εκπαίδευσης) — ποτέ ως προσωπικά ελαττώματα του ατόμου.",
 ].join(" ");
+
+const BTH_GOLDEN_RULES = [
+  "BtH Golden Rules (εφάρμοσέ τες στις συστάσεις σου):",
+  "1. 3-Second Verification Rule: Υποχρεωτικός οπτικός έλεγχος 3 δευτερολέπτων πριν παράδοση λογαριασμού ή πιάτου — εξαλείφει unbilled items και λάθη χρέωσης.",
+  "2. Eyes First, Hand Second: Πλήρης σάρωση τραπεζιού πριν οποιαδήποτε φυσική επαφή — αποφυγή ατυχημάτων και spills.",
+  "3. Vulnerable Guest Confirmation: Αυτόματη επιβεβαίωση βαθμού ψησίματος/αλλεργιών σε έγκυες, ηλικιωμένους, παιδιά.",
+  "4. Sub-Manager Unified Front: Κοινή γραμμή διοίκησης — διορθώσεις υποστηρικτικά μπροστά στην ομάδα, ανάλυση κατ' ιδίαν.",
+  "Όταν μια παρατήρηση αφορά χρέωση/λογαριασμό, αναφέρσου ρητά στον 3-Second Rule. Όταν αφορά υποδοχή ή κίνηση στη σάλα, αναφέρσου στο Eyes First protocol.",
+].join("\n");
 
 function extractJson(raw: string): unknown {
   let s = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
@@ -109,7 +119,7 @@ function coerce(obj: Record<string, unknown>): Analysis {
 
   let bsps = pickEnum(obj.bsps_solution, BSPS, "BSPS-01");
   if (typeof obj.bsps_solution === "string") {
-    const m = obj.bsps_solution.match(/BSPS[\s-]?0?([123])/i);
+    const m = obj.bsps_solution.match(/BSPS[\s-]?0?([12345])/i);
     if (m) bsps = `BSPS-0${m[1]}` as (typeof BSPS)[number];
   }
 
@@ -195,6 +205,7 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
     const system = [
       MENTOR_PERSONA,
       FOH_SCOPE,
+      BTH_GOLDEN_RULES,
       "Απάντησε με ΕΝΑ raw JSON object — χωρίς prose, χωρίς markdown fences.",
       "Schema (όλα τα πεδία υποχρεωτικά):",
       `{`,
@@ -211,7 +222,7 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
     const { text } = await generateText({
       model: gateway("google/gemini-3.1-pro-preview"),
       system,
-      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nObservation type: ${obsType.toUpperCase()}${obsType === "emotional" ? ` (experience_impact=${data.experience_impact ?? "medium"})` : ""}\nReturn the JSON object now.`,
+      prompt: `Bottleneck observed:\n"""${data.bottleneck}"""\n\nObservation type: ${obsType.toUpperCase()}${obsType === "emotional" ? ` (experience_impact=${data.experience_impact ?? "medium"})` : ""}\nVenue type: ${data.venue_type ?? "casual_dining"}\nReturn the JSON object now.`,
     });
 
     let parsed: unknown;

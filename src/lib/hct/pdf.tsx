@@ -65,6 +65,10 @@ export async function downloadExecutiveReport(
     (acc, b) => acc + (obsTypeOf(b) === "negative" ? Number(b.estimated_loss_eur || 0) : 0),
     0,
   );
+  const SHIFTS_PER_YEAR = 300;
+  const uniqueDates = new Set(audits.map((a) => a.audit_date)).size;
+  const avgLossPerShift = uniqueDates > 0 ? totalLoss / uniqueDates : totalLoss;
+  const annualizedLoss = Math.round(avgLossPerShift * SHIFTS_PER_YEAR);
   const structural = audits.filter((a) => obsTypeOf(a) === "negative").length;
   const emotional = audits.filter((a) => obsTypeOf(a) === "positive").length;
   const experiential = audits.filter((a) => obsTypeOf(a) === "emotional").length;
@@ -188,7 +192,7 @@ export async function downloadExecutiveReport(
     const capPct = economics.revenue_ceiling > 0
       ? Math.round((economics.max_total_loss / economics.revenue_ceiling) * 100)
       : 0;
-    const line = `Covers / shift: ${economics.covers}   ·   Revenue ceiling: ${formatEUR(Math.round(economics.revenue_ceiling))}   ·   Max loss (${capPct} %): ${formatEUR(Math.round(economics.max_total_loss))}`;
+    const line = `Covers / shift: ${economics.covers}   ·   Revenue ceiling: ${formatEUR(Math.round(economics.revenue_ceiling))}   ·   Max loss (${capPct} %): ${formatEUR(Math.round(economics.max_total_loss))}   ·   Est. annual loss: ${formatEUR(annualizedLoss)}`;
     doc.text(line, margin, y);
     y += 18;
   } else {
@@ -240,13 +244,15 @@ export async function downloadExecutiveReport(
     (s ?? "").replace(/\s+/g, " ").trim();
 
   const rows = audits.map((a) => {
-    const t = obsTypeOf(a);
+    const obsT = a.observation_type ?? (a.is_positive ? "positive" : "negative");
     const financialCell =
-      t === "positive"
-        ? "Positive Observation"
-        : t === "emotional"
-          ? `Emotional Impact\n${(a.experience_impact ?? "medium").toString().toUpperCase()}`
-          : formatEUR(Number(a.estimated_loss_eur ?? 0));
+      obsT === "positive"
+        ? "—"
+        : obsT === "opportunity"
+          ? "Opportunity"
+          : obsT === "emotional"
+            ? `EMO · ${(a.experience_impact ?? "medium").toUpperCase()}`
+            : formatEUR(Number(a.estimated_loss_eur ?? 0));
     return [
       formatDate(a.audit_date),
       labelOf(SHIFTS, a.shift || "") || "—",

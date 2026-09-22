@@ -69,9 +69,13 @@ export async function downloadExecutiveReport(
   const uniqueDates = new Set(audits.map((a) => a.audit_date)).size;
   const avgLossPerShift = uniqueDates > 0 ? totalLoss / uniqueDates : totalLoss;
   const annualizedLoss = Math.round(avgLossPerShift * SHIFTS_PER_YEAR);
-  const structural = audits.filter((a) => obsTypeOf(a) === "negative").length;
-  const emotional = audits.filter((a) => obsTypeOf(a) === "positive").length;
-  const experiential = audits.filter((a) => obsTypeOf(a) === "emotional").length;
+  const obsTypeOfFull = (a: Audit): string =>
+    a.observation_type ?? (a.is_positive ? "positive" : "negative");
+  const negativeCount = audits.filter((a) => obsTypeOfFull(a) === "negative").length;
+  const positiveCount = audits.filter((a) => obsTypeOfFull(a) === "positive").length;
+  const emotionalCount = audits.filter((a) => obsTypeOfFull(a) === "emotional").length;
+  const opportunityCount = audits.filter((a) => obsTypeOfFull(a) === "opportunity").length;
+
   const dates = audits.map((a) => a.audit_date).sort();
   const range =
     dates.length === 0
@@ -124,9 +128,10 @@ export async function downloadExecutiveReport(
     { label: "TOTAL OBSERVATIONS", value: String(audits.length) },
     { label: "AUDITED FINANCIAL LOSS", value: formatEUR(totalLoss) },
     {
-      label: "STRUCTURAL / EMOTIONAL / EXPERIENTIAL",
-      value: `${structural} / ${emotional} / ${experiential}`,
+      label: "NEG / POS / EMO / OPP",
+      value: `${negativeCount} / ${positiveCount} / ${emotionalCount} / ${opportunityCount}`,
     },
+
   ];
   kpis.forEach((k, i) => {
     const x = margin + i * (kpiW + 10);
@@ -247,12 +252,13 @@ export async function downloadExecutiveReport(
     const obsT = a.observation_type ?? (a.is_positive ? "positive" : "negative");
     const financialCell =
       obsT === "positive"
-        ? "—"
+        ? "€0"
         : obsT === "opportunity"
-          ? "Opportunity"
+          ? "€0"
           : obsT === "emotional"
             ? `EMO · ${(a.experience_impact ?? "medium").toUpperCase()}`
             : formatEUR(Number(a.estimated_loss_eur ?? 0));
+
     return [
       formatDate(a.audit_date),
       labelOf(SHIFTS, a.shift || "") || "—",

@@ -252,7 +252,7 @@ export const analyzeBottleneck = createServerFn({ method: "POST" })
     const system = [
       MENTOR_PERSONA,
       FOH_SCOPE,
-      BTH_GOLDEN_RULES,
+      BTH_KNOWLEDGE_LAYER,
       "Απάντησε με ΕΝΑ raw JSON object — χωρίς prose, χωρίς markdown fences.",
       "Schema (όλα τα πεδία υποχρεωτικά):",
       `{`,
